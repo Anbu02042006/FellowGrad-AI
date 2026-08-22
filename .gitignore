@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# React Native / Android
+android/.gradle/
+android/build/
+android/app/build/
+android/.cxx/
+
+# iOS
+ios/Pods/
+ios/build/
+
+# Logs
+*.log
+
+# Build / generated files
+dist/
+build/
+
+# Project artifacts
+.artifacts/
+
+# ZIP backups
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Maven
+target/

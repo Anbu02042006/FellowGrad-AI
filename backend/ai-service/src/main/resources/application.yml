@@ -1,0 +1,21 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: ai-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-3.5-flash
+  base-url: https://generativelanguage.googleapis.com/v1beta/models/
+
+elevenlabs:
+  api-key: ${ELEVENLABS_API_KEY}
+  voice-id: Nda4CxqYPMJ65wadFnhJ
+  model-id: eleven_flash_v2_5

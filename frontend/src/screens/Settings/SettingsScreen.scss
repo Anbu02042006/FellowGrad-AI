@@ -1,0 +1,125 @@
+$background: #0A0E21;
+$surface: #1D1D35;
+$text: #FFFFFF;
+$textSecondary: #A0A0B0;
+$border: #2A2E45;
+$success: #4CAF50;
+
+.container {
+  flex: 1;
+  background-color: $background;
+}
+
+.header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-horizontal: 16px;
+  height: 56px;
+}
+
+.backButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: $surface;
+  justify-content: center;
+  align-items: center;
+}
+
+.backIcon {
+  color: $text;
+  font-size: 18px;
+}
+
+.headerTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: $text;
+}
+
+.content {
+  flex: 1;
+}
+
+.profileSection {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  background-color: $surface;
+  margin-vertical: 16px;
+  border-radius: 12px;
+  margin-horizontal: 16px;
+}
+
+.profileName {
+  font-size: 20px;
+  font-weight: 600;
+  color: $text;
+  margin-bottom: 4px;
+}
+
+.profileEmail {
+  font-size: 14px;
+  color: $textSecondary;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  color: $textSecondary;
+  margin-left: 24px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-vertical: 16px;
+  padding-horizontal: 24px;
+}
+
+.itemLeft {
+  flex-direction: row;
+  align-items: center;
+}
+
+.itemIcon {
+  font-size: 20px;
+  margin-right: 16px;
+  width: 30px;
+  text-align: center;
+}
+
+.itemLabel {
+  font-size: 16px;
+  color: $text;
+}
+
+.arrow {
+  color: $border;
+  font-size: 16px;
+}
+
+.versionInfo {
+  align-items: center;
+  padding-vertical: 32px;
+}
+
+.versionLabel {
+  font-size: 16px;
+  color: $textSecondary;
+}
+
+.versionNumber {
+  font-size: 14px;
+  color: $textSecondary;
+  margin-top: 4px;
+}

@@ -1,0 +1,134 @@
+$background: #0A0E21;
+$surface: #1D1D35;
+$text: #FFFFFF;
+$textSecondary: #A0A0B0;
+$border: #2A2E45;
+$error: #FF4C4C;
+$success: #4CAF50;
+
+.container {
+  flex: 1;
+  background-color: $background;
+}
+
+.header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-horizontal: 16px;
+  height: 56px;
+}
+
+.backButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: $surface;
+  justify-content: center;
+  align-items: center;
+}
+
+.backIcon {
+  color: $text;
+  font-size: 18px;
+}
+
+.headerTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: $text;
+}
+
+.content {
+  flex: 1;
+  padding-horizontal: 24px;
+}
+
+.profileSection {
+  margin-top: 32px;
+  margin-bottom: 48px;
+}
+
+.profileName {
+  font-size: 24px;
+  font-weight: bold;
+  color: $text;
+  margin-bottom: 4px;
+}
+
+.profileEmail {
+  font-size: 16px;
+  color: $textSecondary;
+}
+
+.settingRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32px;
+}
+
+.label {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text;
+  flex: 1;
+}
+
+.nicknameButton {
+  flex-direction: row;
+  align-items: center;
+}
+
+.nicknameText {
+  font-size: 16px;
+  color: $text;
+  margin-right: 8px;
+}
+
+.arrow {
+  color: $border;
+  font-size: 16px;
+}
+
+.helpText {
+  font-size: 14px;
+  color: $textSecondary;
+  margin-top: 8px;
+  line-height: 20px;
+}
+
+.buttonContainer {
+  margin-top: 48px;
+  padding-bottom: 48px;
+}
+
+.signOutButton {
+  border-width: 1px;
+  border-color: $border;
+  border-radius: 25px;
+  height: 50px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.signOutText {
+  font-size: 16px;
+  font-weight: bold;
+  color: $text;
+}
+
+.deleteButton {
+  background-color: rgba(255, 76, 76, 0.1);
+  border-radius: 25px;
+  height: 50px;
+  justify-content: center;
+  align-items: center;
+}
+
+.deleteText {
+  font-size: 16px;
+  color: $error;
+  font-weight: bold;
+}

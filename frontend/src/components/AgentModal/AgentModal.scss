@@ -1,0 +1,115 @@
+$surface: #1D1D35;
+$text: #FFFFFF;
+$textSecondary: #A0A0B0;
+$border: #2A2E45;
+$primary: #6C63FF;
+
+.overlay {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.modalBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modalContainer {
+  background-color: $surface;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  padding-bottom: 32px;
+  height: 450px;
+}
+
+.handleContainer {
+  padding-vertical: 12px;
+  width: 100%;
+  align-items: center;
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+  background-color: $border;
+  border-radius: 2px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: $text;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.carousel {
+  flex: 1;
+}
+
+.agentCard {
+  width: 400px;
+  padding-horizontal: 32px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.agentInfoContainer {
+  flex: 1;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding-top: 20px;
+}
+
+.agentName {
+  font-size: 32px;
+  font-weight: bold;
+  color: $text;
+  margin-bottom: 12px;
+}
+
+.agentDesc {
+  font-size: 16px;
+  color: $textSecondary;
+  text-align: center;
+  margin-bottom: 24px;
+  min-height: 44px;
+}
+
+.dots {
+  flex-direction: row;
+  margin-bottom: 24px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: $border;
+  margin-horizontal: 4px;
+}
+
+.activeDot {
+  background-color: $primary;
+  width: 12px;
+}
+
+.selectButton {
+  background-color: $primary;
+  padding-vertical: 16px;
+  padding-horizontal: 48px;
+  border-radius: 25px;
+  width: 100%;
+  align-items: center;
+}
+
+.selectButtonText {
+  font-size: 16px;
+  font-weight: bold;
+  color: $text;
+}

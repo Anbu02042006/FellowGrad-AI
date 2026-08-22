@@ -1,0 +1,70 @@
+$background: #0A0E21;
+$surface: #1D1D35;
+$primary: #6C63FF;
+$text: #FFFFFF;
+$textSecondary: #A0A0B0;
+$inputBackground: #161B33;
+
+.container {
+  flex: 1;
+  background-color: $background;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+  justify-content: center;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  color: $text;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: $textSecondary;
+  margin-bottom: 48px;
+}
+
+.form {
+  gap: 16px;
+}
+
+.input {
+  background-color: $inputBackground;
+  border-radius: 12px;
+  height: 56px;
+  padding-horizontal: 16px;
+  color: $text;
+  font-size: 16px;
+  border-width: 1px;
+  border-color: #2A2E45;
+}
+
+.button {
+  background-color: $primary;
+  height: 56px;
+  border-radius: 28px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.buttonText {
+  color: $text;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.link {
+  align-items: center;
+  margin-top: 24px;
+}
+
+.linkText {
+  color: $primary;
+  font-size: 14px;
+}
