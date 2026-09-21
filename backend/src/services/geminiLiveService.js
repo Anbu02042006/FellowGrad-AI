@@ -32,11 +32,11 @@ class GeminiLiveSession {
     this.userId = userId;
     this.conversationId = conversationId;
     this.systemInstruction = systemInstruction;
-    this.onAudioChunk = onAudioChunk || (() => {});
-    this.onInterrupted = onInterrupted || (() => {});
-    this.onTranscript = onTranscript || (() => {});
-    this.onError = onError || (() => {});
-    this.onClose = onClose || (() => {});
+    this.onAudioChunk = onAudioChunk || (() => { });
+    this.onInterrupted = onInterrupted || (() => { });
+    this.onTranscript = onTranscript || (() => { });
+    this.onError = onError || (() => { });
+    this.onClose = onClose || (() => { });
 
     this.ai = null;
     this.session = null;
@@ -163,35 +163,37 @@ class GeminiLiveSession {
    */
   sendAudioChunk(base64AudioChunk) {
     if (!this.session || !this.isConnected) {
-      console.warn('[GeminiLive] Cannot send audio: session is not connected');
+      console.warn(
+        '[GeminiLive] Cannot send audio: session is not connected'
+      );
+      return;
+    }
+
+    if (!base64AudioChunk) {
+      console.warn(
+        '[GeminiLive] Empty audio chunk received'
+      );
       return;
     }
 
     try {
-      // Support both sendRealtimeInput and fallback session.send formats
-      if (typeof this.session.sendRealtimeInput === 'function') {
+      if (
+        typeof this.session.sendRealtimeInput ===
+        'function'
+      ) {
         this.session.sendRealtimeInput({
-          mediaChunks: [
-            {
-              mimeType: geminiLiveConfig.audio.input.mimeType,
-              data: base64AudioChunk,
-            },
-          ],
-        });
-      } else if (typeof this.session.send === 'function') {
-        this.session.send({
-          realtimeInput: {
-            mediaChunks: [
-              {
-                mimeType: geminiLiveConfig.audio.input.mimeType,
-                data: base64AudioChunk,
-              },
-            ],
+          audio: {
+            data: base64AudioChunk,
+            mimeType:
+              geminiLiveConfig.audio.input.mimeType,
           },
         });
       }
     } catch (err) {
-      console.error('[GeminiLive] Error sending audio chunk:', err.message);
+      console.error(
+        '[GeminiLive] Error sending audio chunk:',
+        err.message
+      );
     }
   }
 
