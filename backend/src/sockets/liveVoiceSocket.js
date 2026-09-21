@@ -11,6 +11,7 @@ const { URL } = require('url');
 const { GeminiLiveService } = require('../services/geminiLiveService');
 const MemoryService = require('../services/memoryService');
 const ConversationService = require('../services/conversationService');
+const geminiLiveConfig = require('../config/geminiLive');
 
 const JWT_SECRET = process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970';
 
@@ -59,7 +60,11 @@ const setupLiveVoiceSocket = (httpServer) => {
       conversationId = decoded.conversationId;
       sessionId = decoded.sessionId;
 
-      console.log(`[VoiceSession] Live client connected: user=${userId}, session=${sessionId}, conversation=${conversationId || 'new'}`);
+      const voice = (decoded.voice && geminiLiveConfig.ALLOWED_VOICES.includes(decoded.voice))
+        ? decoded.voice
+        : geminiLiveConfig.DEFAULT_VOICE;
+
+      console.log(`[VoiceSession] Live client connected: user=${userId}, session=${sessionId}, voice=${voice}, conversation=${conversationId || 'new'}`);
 
       // 2. Load personalized companion memory & system instruction
       const systemInstruction = await MemoryService.buildLiveSystemInstruction(userId, conversationId);
@@ -76,6 +81,7 @@ const setupLiveVoiceSocket = (httpServer) => {
         userId,
         conversationId,
         systemInstruction,
+        voice,
         onAudioChunk: (base64Audio) => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({

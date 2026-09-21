@@ -25,9 +25,14 @@ const createLiveSession = async (req, res, next) => {
     }
 
     const conversationId = req.body?.conversationId || req.query?.conversationId || null;
+    const requestedVoice = req.body?.voice || req.query?.voice;
+    const voice = (requestedVoice && geminiLiveConfig.ALLOWED_VOICES.includes(requestedVoice))
+      ? requestedVoice
+      : geminiLiveConfig.DEFAULT_VOICE;
+
     const sessionId = uuidv4();
 
-    console.log(`[VoiceSession] Creating Live session ${sessionId} for user ${userId} (Conversation: ${conversationId || 'new'})`);
+    console.log(`[VoiceSession] Creating Live session ${sessionId} for user ${userId} with voice: ${voice} (Conversation: ${conversationId || 'new'})`);
 
     // Fetch user context ahead of time
     const userContext = await MemoryService.getUserContext(userId, conversationId);
@@ -38,6 +43,7 @@ const createLiveSession = async (req, res, next) => {
         sessionId,
         userId,
         conversationId,
+        voice,
         type: 'gemini_live_session',
       },
       JWT_SECRET,
@@ -48,6 +54,7 @@ const createLiveSession = async (req, res, next) => {
       success: true,
       sessionId,
       sessionToken,
+      voice,
       wsEndpoint: '/ws/live',
       model: geminiLiveConfig.model,
       audioConfig: {

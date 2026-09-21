@@ -14,6 +14,7 @@ class GeminiLiveSession {
     userId,
     conversationId,
     systemInstruction,
+    voice,
     onAudioChunk,
     onInterrupted,
     onTranscript,
@@ -24,6 +25,11 @@ class GeminiLiveSession {
     this.userId = userId;
     this.conversationId = conversationId;
     this.systemInstruction = systemInstruction;
+
+    // Validate voice against whitelist, fallback to default
+    this.voice = (voice && geminiLiveConfig.ALLOWED_VOICES.includes(voice))
+      ? voice
+      : (geminiLiveConfig.voiceConfig?.voiceName || geminiLiveConfig.DEFAULT_VOICE);
 
     this.onAudioChunk = onAudioChunk || (() => { });
     this.onInterrupted = onInterrupted || (() => { });
@@ -68,7 +74,7 @@ class GeminiLiveSession {
       const model = geminiLiveConfig.model;
 
       console.log(
-        `[GeminiLive] Connecting to Live model: ${model}`
+        `[GeminiLive] Connecting to Live model: ${model} with voice: ${this.voice}`
       );
 
       /**
@@ -102,8 +108,7 @@ Respond using voice.
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: {
-              voiceName:
-                geminiLiveConfig.voiceConfig.voiceName,
+              voiceName: this.voice,
             },
           },
         },

@@ -53,8 +53,11 @@ const geminiLiveConfig = {
   },
 
   // Voice persona configuration
+  ALLOWED_VOICES: ['Puck', 'Charon', 'Aoede', 'Kore'],
+  DEFAULT_VOICE: 'Aoede',
+
   voiceConfig: {
-    voiceName: process.env.GEMINI_VOICE_NAME || 'Aoede', // Natural conversational voice (options: Aoede, Puck, Charon, Fenrir, Kore)
+    voiceName: process.env.GEMINI_VOICE_NAME || 'Aoede', // Supported prebuilt voices: Puck (Male 1), Charon (Male 2), Aoede (Female 1), Kore (Female 2)
   },
 
   systemPrompt: LIVE_SYSTEM_PROMPT,
