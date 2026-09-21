@@ -113,6 +113,15 @@ const setupLiveVoiceSocket = (httpServer) => {
             });
           }
         },
+        onTurnComplete: () => {
+          console.log(`[VoiceSession] Assistant turn complete for session ${sessionId}, switching client to LISTENING`);
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'status',
+              status: 'LISTENING',
+            }));
+          }
+        },
         onError: (err) => {
           console.error(`[VoiceSession] Live error for session ${sessionId}:`, err?.message || err);
           if (ws.readyState === WebSocket.OPEN) {

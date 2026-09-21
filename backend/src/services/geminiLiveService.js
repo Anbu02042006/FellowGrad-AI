@@ -17,6 +17,7 @@ class GeminiLiveSession {
     onAudioChunk,
     onInterrupted,
     onTranscript,
+    onTurnComplete,
     onError,
     onClose,
   }) {
@@ -27,6 +28,7 @@ class GeminiLiveSession {
     this.onAudioChunk = onAudioChunk || (() => { });
     this.onInterrupted = onInterrupted || (() => { });
     this.onTranscript = onTranscript || (() => { });
+    this.onTurnComplete = onTurnComplete || (() => { });
     this.onError = onError || (() => { });
     this.onClose = onClose || (() => { });
 
@@ -103,12 +105,10 @@ Respond using voice.
         },
 
         /**
-         * Enable user speech transcription.
-         *
-         * This is only for debugging/verification.
-         * It lets us see what Gemini hears.
+         * Enable user speech transcription and assistant speech transcription.
          */
         inputAudioTranscription: {},
+        outputAudioTranscription: {},
 
         /**
          * Keep automatic VAD enabled.
@@ -119,6 +119,13 @@ Respond using voice.
         realtimeInputConfig: {
           automaticActivityDetection: {
             disabled: false,
+
+            /**
+             * Lower start-of-speech sensitivity so speaker bleed
+             * or quiet ambient noise does not cause false barge-in
+             * interruptions.
+             */
+            startOfSpeechSensitivity: 'START_SENSITIVITY_LOW',
 
             /**
              * Small prefix buffer so the beginning
@@ -337,7 +344,7 @@ Respond using voice.
         }
 
         // --------------------------------------------------------
-        // GEMINI TEXT
+        // GEMINI TEXT (if returned via content part)
         // --------------------------------------------------------
 
         if (part.text) {
@@ -354,6 +361,29 @@ Respond using voice.
             isComplete: false,
           });
         }
+      }
+    }
+
+    // ============================================================
+    // ASSISTANT OUTPUT AUDIO TRANSCRIPTION (streaming text caption)
+    // ============================================================
+
+    if (serverContent.outputTranscription) {
+      const transcript =
+        serverContent.outputTranscription.text || '';
+
+      if (transcript) {
+        console.log(
+          `[GeminiLive] ASSISTANT TRANSCRIPT: ${transcript}`
+        );
+
+        this.assistantTranscriptBuffer += transcript;
+
+        this.onTranscript({
+          role: 'ASSISTANT',
+          content: transcript,
+          isComplete: false,
+        });
       }
     }
 
@@ -376,6 +406,8 @@ Respond using voice.
 
         this.assistantTranscriptBuffer = '';
       }
+
+      this.onTurnComplete();
     }
   }
 
