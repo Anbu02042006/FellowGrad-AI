@@ -1,10 +1,8 @@
 /**
  * Gemini Live Service for FellowGrad AI
  *
- * Manages real-time bidirectional audio streaming session
- * with Vertex AI Gemini Live API.
- *
- * Uses official @google/genai SDK.
+ * Real-time bidirectional audio streaming with
+ * Vertex AI Gemini Live API.
  */
 
 const { GoogleGenAI } = require('@google/genai');
@@ -12,17 +10,6 @@ const { GoogleGenAI } = require('@google/genai');
 const geminiLiveConfig = require('../config/geminiLive');
 
 class GeminiLiveSession {
-  /**
-   * @param {object} params
-   * @param {string} params.userId
-   * @param {string} [params.conversationId]
-   * @param {string} params.systemInstruction
-   * @param {Function} params.onAudioChunk
-   * @param {Function} params.onInterrupted
-   * @param {Function} params.onTranscript
-   * @param {Function} params.onError
-   * @param {Function} params.onClose
-   */
   constructor({
     userId,
     conversationId,
@@ -48,26 +35,17 @@ class GeminiLiveSession {
     this.isConnected = false;
 
     this.assistantTranscriptBuffer = '';
+    this.userTranscriptBuffer = '';
 
-    // ============================================================
-    // AUDIO DEBUG COUNTERS
-    // ============================================================
-
-    // Number of PCM chunks received from mobile client.
     this.inputAudioChunkCount = 0;
-
-    // Number of audio chunks received back from Gemini.
     this.outputAudioChunkCount = 0;
 
-    // Total input bytes received from mobile.
     this.inputAudioBytes = 0;
-
-    // Total output bytes received from Gemini.
     this.outputAudioBytes = 0;
   }
 
   /**
-   * Initialize and connect to Gemini Live via Vertex AI.
+   * Connect to Gemini Live.
    */
   async connect() {
     try {
@@ -87,13 +65,30 @@ class GeminiLiveSession {
         `[GeminiLive] Connecting to Live model: ${model}`
       );
 
+      /**
+       * IMPORTANT:
+       *
+       * inputAudioTranscription allows us to verify
+       * whether Gemini is actually understanding
+       * the PCM audio coming from the phone.
+       */
       const liveConfig = {
         responseModalities: ['AUDIO'],
 
         systemInstruction: {
           parts: [
             {
-              text: this.systemInstruction,
+              text:
+                this.systemInstruction ||
+                `
+You are FellowGrad AI, a helpful personal academic companion.
+
+Speak naturally and concisely.
+Listen carefully to the user's voice.
+Answer the user's questions conversationally.
+Do not wait for text input.
+Respond using voice.
+              `.trim(),
             },
           ],
         },
@@ -106,17 +101,48 @@ class GeminiLiveSession {
             },
           },
         },
+
+        /**
+         * Enable user speech transcription.
+         *
+         * This is only for debugging/verification.
+         * It lets us see what Gemini hears.
+         */
+        inputAudioTranscription: {},
+
+        /**
+         * Keep automatic VAD enabled.
+         *
+         * Gemini automatically detects when the
+         * user starts and stops speaking.
+         */
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            disabled: false,
+
+            /**
+             * Small prefix buffer so the beginning
+             * of words is not lost.
+             */
+            prefixPaddingMs: 200,
+
+            /**
+             * End the user's turn after silence.
+             */
+            silenceDurationMs: 700,
+          },
+        },
       };
+
+      console.log(
+        '[GeminiLive] Live configuration prepared'
+      );
 
       this.session = await this.ai.live.connect({
         model,
         config: liveConfig,
 
         callbacks: {
-          // ========================================================
-          // GEMINI CONNECTION OPEN
-          // ========================================================
-
           onopen: () => {
             console.log(
               `[GeminiLive] Session established with Vertex AI for user ${this.userId}`
@@ -129,44 +155,36 @@ class GeminiLiveSession {
             );
           },
 
-          // ========================================================
-          // GEMINI MESSAGE
-          // ========================================================
-
           onmessage: (message) => {
             this._handleIncomingMessage(message);
           },
 
-          // ========================================================
-          // GEMINI ERROR
-          // ========================================================
-
           onerror: (err) => {
             console.error(
-              '[GeminiLive] Error in Live session:',
+              '[GeminiLive] ERROR from Gemini:',
               err?.message || err
             );
 
             this.onError(err);
           },
 
-          // ========================================================
-          // GEMINI CLOSE
-          // ========================================================
-
-          onclose: (e) => {
+          onclose: (event) => {
             console.log(
               '[GeminiLive] Session closed:',
-              e?.reason || 'Normal close'
+              event?.reason || 'Normal close'
             );
 
             console.log(
-              `[GeminiLive] Final audio stats - input chunks: ${this.inputAudioChunkCount}, output chunks: ${this.outputAudioChunkCount}`
+              `[GeminiLive] FINAL STATS -> input chunks: ${this.inputAudioChunkCount}, output chunks: ${this.outputAudioChunkCount}`
+            );
+
+            console.log(
+              `[GeminiLive] FINAL BYTES -> input: ${this.inputAudioBytes}, output: ${this.outputAudioBytes}`
             );
 
             this.isConnected = false;
 
-            this.onClose(e);
+            this.onClose(event);
           },
         },
       });
@@ -175,7 +193,7 @@ class GeminiLiveSession {
     } catch (err) {
       console.error(
         '[GeminiLive] Failed to connect to Gemini Live:',
-        err.message
+        err?.message || err
       );
 
       this.onError(err);
@@ -185,13 +203,32 @@ class GeminiLiveSession {
   }
 
   /**
-   * Parse incoming serverContent from Gemini Live.
-   *
-   * @private
+   * Handle messages coming from Gemini Live.
    */
   _handleIncomingMessage(message) {
     if (!message) {
       return;
+    }
+
+    /**
+     * DEBUG:
+     *
+     * Log the top-level message structure once
+     * so we know exactly what Gemini is returning.
+     */
+    if (!this._receivedFirstGeminiMessage) {
+      this._receivedFirstGeminiMessage = true;
+
+      try {
+        console.log(
+          '[GeminiLive] First Gemini message:',
+          JSON.stringify(message).slice(0, 2000)
+        );
+      } catch (err) {
+        console.log(
+          '[GeminiLive] First Gemini message received'
+        );
+      }
     }
 
     const serverContent = message.serverContent;
@@ -201,12 +238,12 @@ class GeminiLiveSession {
     }
 
     // ============================================================
-    // 1. BARGE-IN / USER INTERRUPTION
+    // USER INTERRUPTION
     // ============================================================
 
     if (serverContent.interrupted) {
       console.log(
-        '[GeminiLive] User interruption detected by model (barge-in)'
+        '[GeminiLive] User interruption detected'
       );
 
       this.assistantTranscriptBuffer = '';
@@ -217,7 +254,48 @@ class GeminiLiveSession {
     }
 
     // ============================================================
-    // 2. MODEL TURN
+    // USER INPUT TRANSCRIPTION
+    // ============================================================
+
+    if (serverContent.inputTranscription) {
+      const transcript =
+        serverContent.inputTranscription.text || '';
+
+      if (transcript) {
+        console.log(
+          `[GeminiLive] USER TRANSCRIPT: ${transcript}`
+        );
+
+        this.userTranscriptBuffer += transcript;
+
+        this.onTranscript({
+          role: 'USER',
+          content: transcript,
+          isComplete: false,
+        });
+      }
+
+      if (
+        serverContent.inputTranscription.finished
+      ) {
+        console.log(
+          `[GeminiLive] USER TRANSCRIPT COMPLETE: ${this.userTranscriptBuffer}`
+        );
+
+        if (this.userTranscriptBuffer) {
+          this.onTranscript({
+            role: 'USER',
+            content: this.userTranscriptBuffer,
+            isComplete: true,
+          });
+
+          this.userTranscriptBuffer = '';
+        }
+      }
+    }
+
+    // ============================================================
+    // MODEL TURN
     // ============================================================
 
     if (
@@ -226,30 +304,32 @@ class GeminiLiveSession {
     ) {
       for (const part of serverContent.modelTurn.parts) {
         // --------------------------------------------------------
-        // AUDIO RESPONSE FROM GEMINI
+        // GEMINI AUDIO
         // --------------------------------------------------------
 
         if (
           part.inlineData &&
           part.inlineData.data
         ) {
-          const audioData = part.inlineData.data;
+          const audioData =
+            part.inlineData.data;
 
           this.outputAudioChunkCount++;
 
-          // Base64 -> approximate raw byte size.
-          const approximateBytes = Math.floor(
-            (audioData.length * 3) / 4
-          );
+          const approximateBytes =
+            Math.floor(
+              (audioData.length * 3) / 4
+            );
 
-          this.outputAudioBytes += approximateBytes;
+          this.outputAudioBytes +=
+            approximateBytes;
 
           if (
             this.outputAudioChunkCount === 1 ||
             this.outputAudioChunkCount % 50 === 0
           ) {
             console.log(
-              `[GeminiLive] Received audio chunk #${this.outputAudioChunkCount} from Gemini, base64 length: ${audioData.length}`
+              `[GeminiLive] RECEIVED AUDIO FROM GEMINI #${this.outputAudioChunkCount}, base64 length: ${audioData.length}, approximate bytes: ${approximateBytes}`
             );
           }
 
@@ -257,11 +337,16 @@ class GeminiLiveSession {
         }
 
         // --------------------------------------------------------
-        // TEXT TRANSCRIPT FROM GEMINI
+        // GEMINI TEXT
         // --------------------------------------------------------
 
         if (part.text) {
-          this.assistantTranscriptBuffer += part.text;
+          console.log(
+            `[GeminiLive] MODEL TEXT: ${part.text}`
+          );
+
+          this.assistantTranscriptBuffer +=
+            part.text;
 
           this.onTranscript({
             role: 'ASSISTANT',
@@ -273,18 +358,19 @@ class GeminiLiveSession {
     }
 
     // ============================================================
-    // 3. TURN COMPLETE
+    // TURN COMPLETE
     // ============================================================
 
     if (serverContent.turnComplete) {
       console.log(
-        '[GeminiLive] Assistant turn complete'
+        '[GeminiLive] ASSISTANT TURN COMPLETE'
       );
 
       if (this.assistantTranscriptBuffer) {
         this.onTranscript({
           role: 'ASSISTANT',
-          content: this.assistantTranscriptBuffer,
+          content:
+            this.assistantTranscriptBuffer,
           isComplete: true,
         });
 
@@ -294,22 +380,19 @@ class GeminiLiveSession {
   }
 
   /**
-   * Stream raw microphone PCM chunk to Gemini Live.
+   * Send microphone PCM to Gemini.
    *
-   * Input:
+   * Expected:
+   * 16-bit PCM
    * 16kHz
-   * 16-bit
    * mono
-   * LINEAR16 PCM
-   *
-   * @param {string} base64AudioChunk
+   * little-endian
    */
   sendAudioChunk(base64AudioChunk) {
-    // ============================================================
-    // CHECK GEMINI CONNECTION
-    // ============================================================
-
-    if (!this.session || !this.isConnected) {
+    if (
+      !this.session ||
+      !this.isConnected
+    ) {
       console.warn(
         '[GeminiLive] Cannot send audio: session is not connected'
       );
@@ -317,83 +400,63 @@ class GeminiLiveSession {
       return;
     }
 
-    // ============================================================
-    // CHECK AUDIO DATA
-    // ============================================================
-
     if (!base64AudioChunk) {
       console.warn(
-        '[GeminiLive] Empty audio chunk received'
+        '[GeminiLive] Empty audio chunk'
       );
 
       return;
     }
 
-    // ============================================================
-    // COUNT INPUT AUDIO
-    // ============================================================
-
     this.inputAudioChunkCount++;
 
-    // Approximate decoded PCM bytes.
-    const approximateBytes = Math.floor(
-      (base64AudioChunk.length * 3) / 4
-    );
+    const approximateBytes =
+      Math.floor(
+        (base64AudioChunk.length * 3) / 4
+      );
 
-    this.inputAudioBytes += approximateBytes;
+    this.inputAudioBytes +=
+      approximateBytes;
 
-    // Log first chunk and every 50 chunks.
-    //
-    // 100ms chunks:
-    //
-    // #1   = first 100ms
-    // #50  = approximately 5 seconds
-    // #100 = approximately 10 seconds
-    // #150 = approximately 15 seconds
-    //
     if (
       this.inputAudioChunkCount === 1 ||
       this.inputAudioChunkCount % 50 === 0
     ) {
       console.log(
-        `[GeminiLive] Received input audio chunk #${this.inputAudioChunkCount}, base64 length: ${base64AudioChunk.length}, approximate PCM bytes: ${approximateBytes}`
+        `[GeminiLive] INPUT AUDIO #${this.inputAudioChunkCount} -> base64: ${base64AudioChunk.length}, bytes: ${approximateBytes}`
       );
     }
 
-    // ============================================================
-    // SEND AUDIO TO GEMINI LIVE
-    // ============================================================
-
     try {
       if (
-        typeof this.session.sendRealtimeInput ===
+        typeof this.session
+          .sendRealtimeInput ===
         'function'
       ) {
         this.session.sendRealtimeInput({
           audio: {
             data: base64AudioChunk,
             mimeType:
-              geminiLiveConfig.audio.input.mimeType,
+              'audio/pcm;rate=16000',
           },
         });
 
-        // Log successful forwarding periodically.
         if (
           this.inputAudioChunkCount === 1 ||
           this.inputAudioChunkCount % 50 === 0
         ) {
           console.log(
-            `[GeminiLive] Forwarded input audio chunk #${this.inputAudioChunkCount} to Gemini`
+            `[GeminiLive] INPUT AUDIO #${this.inputAudioChunkCount} FORWARDED TO GEMINI`
           );
         }
       } else {
         console.error(
-          '[GeminiLive] sendRealtimeInput() is not available on Gemini session'
+          '[GeminiLive] sendRealtimeInput() is not available'
         );
       }
     } catch (err) {
       console.error(
-        '[GeminiLive] Error sending audio chunk:',
+        '[GeminiLive] ERROR forwarding audio:',
         err?.message || err
       );
 
@@ -402,12 +465,16 @@ class GeminiLiveSession {
   }
 
   /**
-   * Send text message turn to Gemini Live.
+   * Send text turn to Gemini.
    *
-   * @param {string} text
+   * Useful as a diagnostic:
+   * if this produces audio, Gemini output is working.
    */
   sendTextMessage(text) {
-    if (!this.session || !this.isConnected) {
+    if (
+      !this.session ||
+      !this.isConnected
+    ) {
       console.warn(
         '[GeminiLive] Cannot send text: session is not connected'
       );
@@ -415,43 +482,78 @@ class GeminiLiveSession {
       return;
     }
 
+    if (!text || !text.trim()) {
+      return;
+    }
+
     try {
+      console.log(
+        `[GeminiLive] Sending diagnostic text: ${text}`
+      );
+
       if (
-        typeof this.session.send === 'function'
+        typeof this.session.sendRealtimeInput ===
+        'function'
       ) {
-        this.session.send({
-          clientContent: {
-            turns: [
-              {
-                role: 'user',
-                parts: [
-                  {
-                    text,
-                  },
-                ],
-              },
-            ],
-            turnComplete: true,
-          },
+        this.session.sendRealtimeInput({
+          text: text.trim(),
         });
       }
     } catch (err) {
       console.error(
-        '[GeminiLive] Error sending text message:',
-        err.message
+        '[GeminiLive] Error sending text:',
+        err?.message || err
       );
     }
   }
 
   /**
-   * Cleanly close active session.
+   * Explicitly tell Gemini the microphone stream ended.
+   *
+   * This is useful when the user stops the voice session.
+   */
+  endAudioStream() {
+    if (
+      !this.session ||
+      !this.isConnected
+    ) {
+      return;
+    }
+
+    try {
+      console.log(
+        '[GeminiLive] Sending audioStreamEnd'
+      );
+
+      this.session.sendRealtimeInput({
+        audioStreamEnd: true,
+      });
+    } catch (err) {
+      console.warn(
+        '[GeminiLive] Could not send audioStreamEnd:',
+        err?.message || err
+      );
+    }
+  }
+
+  /**
+   * Close Gemini Live session.
    */
   async close() {
     this.isConnected = false;
 
     console.log(
-      `[GeminiLive] Closing session. Input chunks: ${this.inputAudioChunkCount}, Output chunks: ${this.outputAudioChunkCount}`
+      `[GeminiLive] Closing session -> input chunks: ${this.inputAudioChunkCount}, output chunks: ${this.outputAudioChunkCount}`
     );
+
+    try {
+      this.endAudioStream();
+    } catch (err) {
+      console.warn(
+        '[GeminiLive] Error ending audio stream:',
+        err?.message || err
+      );
+    }
 
     if (this.session) {
       try {
@@ -463,7 +565,8 @@ class GeminiLiveSession {
         }
       } catch (err) {
         console.warn(
-          `[GeminiLive] Error during session close: ${err.message}`
+          '[GeminiLive] Error closing session:',
+          err?.message || err
         );
       }
 
@@ -473,9 +576,6 @@ class GeminiLiveSession {
 }
 
 class GeminiLiveService {
-  /**
-   * Factory method to create and connect a live session.
-   */
   static async createSession(options) {
     const session =
       new GeminiLiveSession(options);
