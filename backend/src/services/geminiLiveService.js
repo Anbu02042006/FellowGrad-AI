@@ -429,34 +429,28 @@ Respond using voice.
 
     try {
       if (
-        typeof this.session
-          .sendRealtimeInput ===
-        'function'
+        typeof this.session.sendRealtimeInput === 'function'
       ) {
         this.session.sendRealtimeInput({
           audio: {
             data: base64AudioChunk,
-            mimeType:
-              'audio/pcm;rate=16000',
+            mimeType: 'audio/pcm;rate=16000',
           },
         });
 
-        if (
-          this.inputAudioChunkCount === 1 ||
-          this.inputAudioChunkCount % 50 === 0
-        ) {
-          console.log(
-            `[GeminiLive] INPUT AUDIO #${this.inputAudioChunkCount} FORWARDED TO GEMINI`
-          );
-        }
-      } else {
-        console.error(
-          '[GeminiLive] sendRealtimeInput() is not available'
+        console.log(
+          `[GeminiLive] sendRealtimeInput SUCCESS #${this.inputAudioChunkCount}`
         );
+      } else {
+        const err = new Error('sendRealtimeInput() is not available on Gemini session');
+        console.error(
+          `[GeminiLive] ERROR: ${err.message}`
+        );
+        this.onError(err);
       }
     } catch (err) {
       console.error(
-        '[GeminiLive] ERROR forwarding audio:',
+        `[GeminiLive] ERROR sending audio chunk #${this.inputAudioChunkCount}:`,
         err?.message || err
       );
 
@@ -492,12 +486,19 @@ Respond using voice.
       );
 
       if (
-        typeof this.session.sendRealtimeInput ===
-        'function'
+        typeof this.session.sendRealtimeInput === 'function'
       ) {
         this.session.sendRealtimeInput({
           text: text.trim(),
         });
+
+        console.log(
+          '[GeminiLive] Diagnostic text sent successfully'
+        );
+      } else {
+        console.error(
+          '[GeminiLive] sendRealtimeInput() is not available for text message'
+        );
       }
     } catch (err) {
       console.error(
@@ -528,6 +529,10 @@ Respond using voice.
       this.session.sendRealtimeInput({
         audioStreamEnd: true,
       });
+
+      console.log(
+        '[GeminiLive] audioStreamEnd SENT successfully'
+      );
     } catch (err) {
       console.warn(
         '[GeminiLive] Could not send audioStreamEnd:',
@@ -540,8 +545,6 @@ Respond using voice.
    * Close Gemini Live session.
    */
   async close() {
-    this.isConnected = false;
-
     console.log(
       `[GeminiLive] Closing session -> input chunks: ${this.inputAudioChunkCount}, output chunks: ${this.outputAudioChunkCount}`
     );
@@ -555,11 +558,12 @@ Respond using voice.
       );
     }
 
+    this.isConnected = false;
+
     if (this.session) {
       try {
         if (
-          typeof this.session.close ===
-          'function'
+          typeof this.session.close === 'function'
         ) {
           await this.session.close();
         }
@@ -572,6 +576,10 @@ Respond using voice.
 
       this.session = null;
     }
+
+    console.log(
+      '[GeminiLive] Gemini Live session cleanup complete'
+    );
   }
 }
 
