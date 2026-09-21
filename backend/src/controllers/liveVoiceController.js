@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const geminiLiveConfig = require('../config/geminiLive');
 const MemoryService = require('../services/memoryService');
+const ConversationService = require('../services/conversationService');
 
 const JWT_SECRET = process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970';
 
@@ -24,7 +25,18 @@ const createLiveSession = async (req, res, next) => {
       });
     }
 
-    const conversationId = req.body?.conversationId || req.query?.conversationId || null;
+    const isIncognito = Boolean(req.body?.incognito ?? req.query?.incognito ?? false);
+
+    let conversationId = req.body?.conversationId || req.query?.conversationId || null;
+    if (!isIncognito && !conversationId) {
+      try {
+        const autoConv = await ConversationService.createConversation({ userId, title: 'Voice Session' });
+        conversationId = autoConv.id;
+      } catch (e) {
+        console.warn(`[VoiceSession] Note creating conversation: ${e.message}`);
+      }
+    }
+
     const requestedVoice = req.body?.voice || req.query?.voice;
     const voice = (requestedVoice && geminiLiveConfig.ALLOWED_VOICES.includes(requestedVoice))
       ? requestedVoice
@@ -32,18 +44,21 @@ const createLiveSession = async (req, res, next) => {
 
     const sessionId = uuidv4();
 
-    console.log(`[VoiceSession] Creating Live session ${sessionId} for user ${userId} with voice: ${voice} (Conversation: ${conversationId || 'new'})`);
+    console.log(`[VoiceSession] Creating Live session ${sessionId} for user ${userId} with voice: ${voice} (Conversation: ${conversationId || (isIncognito ? 'INCOGNITO' : 'new')}, incognito: ${isIncognito})`);
 
-    // Fetch user context ahead of time
-    const userContext = await MemoryService.getUserContext(userId, conversationId);
+    // Fetch user context ahead of time (empty for incognito)
+    const userContext = isIncognito
+      ? { profile: null, memories: [], recentMessages: [] }
+      : await MemoryService.getUserContext(userId, conversationId);
 
     // Create a short-lived token specifically for the Live WebSocket connection (expires in 10 minutes)
     const sessionToken = jwt.sign(
       {
         sessionId,
         userId,
-        conversationId,
+        conversationId: isIncognito ? null : conversationId,
         voice,
+        incognito: isIncognito,
         type: 'gemini_live_session',
       },
       JWT_SECRET,
@@ -54,7 +69,9 @@ const createLiveSession = async (req, res, next) => {
       success: true,
       sessionId,
       sessionToken,
+      conversationId: isIncognito ? null : conversationId,
       voice,
+      incognito: isIncognito,
       wsEndpoint: '/ws/live',
       model: geminiLiveConfig.model,
       audioConfig: {
@@ -63,7 +80,7 @@ const createLiveSession = async (req, res, next) => {
         outputSampleRate: geminiLiveConfig.audio.output.sampleRate,
         outputChannels: geminiLiveConfig.audio.output.channels,
       },
-      profileLoaded: !!userContext.profile,
+      profileLoaded: isIncognito ? false : !!userContext.profile,
     });
   } catch (err) {
     console.error('[VoiceSession] Error creating live session:', err);

@@ -8,6 +8,7 @@ export interface LiveSessionResponse {
   success: boolean;
   sessionId: string;
   sessionToken: string;
+  voice?: string;
   wsEndpoint: string;
   model: string;
   audioConfig: {
@@ -32,9 +33,11 @@ const voiceApi = {
    * Provision a short-lived Gemini Live session (Active voice pipeline)
    * POST /api/voice/live/session
    */
-  createLiveSession: (conversationId?: string | null) =>
+  createLiveSession: (conversationId?: string | null, voice?: string, incognito?: boolean) =>
     apiClient.post<LiveSessionResponse>('/api/voice/live/session', {
       conversationId: conversationId || undefined,
+      voice: voice || undefined,
+      incognito: Boolean(incognito),
     }),
 
   /**

@@ -1,0 +1,191 @@
+$background: #0A0E21;
+$surface: #1D1D35;
+$surfaceSelected: #26274D;
+$text: #FFFFFF;
+$textSecondary: #A0A0B0;
+$border: #2A2E45;
+$borderSelected: #6C63FF;
+$primary: #6C63FF;
+$success: #4CAF50;
+
+.overlay {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.modalBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+}
+
+.modalContainer {
+  background-color: $surface;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding-horizontal: 20px;
+  padding-bottom: 36px;
+  max-height: 85%;
+  border-top-width: 1px;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.handleContainer {
+  padding-vertical: 12px;
+  width: 100%;
+  align-items: center;
+}
+
+.handle {
+  width: 42px;
+  height: 4px;
+  background-color: $border;
+  border-radius: 2px;
+}
+
+.header {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: $text;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background-color: #252844;
+  justify-content: center;
+  align-items: center;
+}
+
+.closeText {
+  color: $textSecondary;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: $textSecondary;
+  margin-bottom: 20px;
+}
+
+.voiceList {
+  margin-bottom: 8px;
+}
+
+.voiceCard {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #14172B;
+  border-width: 1.5px;
+  border-color: $border;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.voiceCardSelected {
+  background-color: $surfaceSelected;
+  border-color: $borderSelected;
+}
+
+.voiceLeft {
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+}
+
+.avatarCircle {
+  width: 46px;
+  height: 46px;
+  border-radius: 23px;
+  background-color: #232742;
+  justify-content: center;
+  align-items: center;
+  margin-right: 14px;
+}
+
+.avatarCircleSelected {
+  background-color: rgba(108, 99, 255, 0.25);
+}
+
+.avatarIcon {
+  font-size: 24px;
+}
+
+.voiceInfo {
+  flex: 1;
+}
+
+.voiceNameRow {
+  flex-direction: row;
+  align-items: center;
+}
+
+.voiceLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text;
+  margin-right: 8px;
+}
+
+.defaultBadge {
+  background-color: rgba(76, 175, 80, 0.18);
+  border-width: 1px;
+  border-color: $success;
+  border-radius: 8px;
+  padding-horizontal: 6px;
+  padding-vertical: 2px;
+}
+
+.defaultBadgeText {
+  color: $success;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.voiceSubtitle {
+  font-size: 13px;
+  color: #B5B5CA;
+  margin-top: 2px;
+}
+
+.voiceDescription {
+  font-size: 11px;
+  color: $textSecondary;
+  margin-top: 2px;
+}
+
+.radioCircle {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  border-width: 2px;
+  border-color: $border;
+  justify-content: center;
+  align-items: center;
+  margin-left: 12px;
+}
+
+.radioCircleSelected {
+  border-color: $primary;
+  background-color: $primary;
+}
+
+.radioCheckmark {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: bold;
+}

@@ -39,12 +39,14 @@ export class GeminiLiveService {
 
   async startSession(
     conversationId: string | null,
-    callbacks: LiveSessionCallbacks
+    callbacks: LiveSessionCallbacks,
+    voice?: string,
+    incognito?: boolean
   ): Promise<boolean> {
     const generation = ++this.sessionGeneration;
 
     console.log(
-      `[GeminiLive] Starting session generation ${generation}`
+      `[GeminiLive] Starting session generation ${generation} with voice: ${voice || 'default'}`
     );
 
     // Close any existing session first.
@@ -78,11 +80,11 @@ export class GeminiLiveService {
       // ============================================================
 
       console.log(
-        '[GeminiLive] Requesting live session credential from backend...'
+        `[GeminiLive] Requesting live session credential from backend with voice: ${voice || 'default'}, incognito: ${Boolean(incognito)}...`
       );
 
       const sessionResponse =
-        await voiceApi.createLiveSession(conversationId);
+        await voiceApi.createLiveSession(conversationId, voice, incognito);
 
       // Make sure this request still belongs to the active session.
       if (generation !== this.sessionGeneration) {

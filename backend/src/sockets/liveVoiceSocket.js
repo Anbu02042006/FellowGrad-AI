@@ -11,6 +11,7 @@ const { URL } = require('url');
 const { GeminiLiveService } = require('../services/geminiLiveService');
 const MemoryService = require('../services/memoryService');
 const ConversationService = require('../services/conversationService');
+const ConversationSearchService = require('../services/conversationSearchService');
 const geminiLiveConfig = require('../config/geminiLive');
 
 const JWT_SECRET = process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970';
@@ -57,17 +58,31 @@ const setupLiveVoiceSocket = (httpServer) => {
       }
 
       userId = decoded.userId;
-      conversationId = decoded.conversationId;
       sessionId = decoded.sessionId;
+      const isIncognito = Boolean(decoded.incognito);
+      conversationId = isIncognito ? null : decoded.conversationId;
 
       const voice = (decoded.voice && geminiLiveConfig.ALLOWED_VOICES.includes(decoded.voice))
         ? decoded.voice
         : geminiLiveConfig.DEFAULT_VOICE;
 
-      console.log(`[VoiceSession] Live client connected: user=${userId}, session=${sessionId}, voice=${voice}, conversation=${conversationId || 'new'}`);
+      if (!isIncognito && !conversationId && userId) {
+        try {
+          const autoConv = await ConversationService.createConversation({ userId, title: 'Voice Session' });
+          conversationId = autoConv.id;
+        } catch (convErr) {
+          console.warn(`[VoiceSession] Note creating initial conversation: ${convErr.message}`);
+        }
+      }
 
-      // 2. Load personalized companion memory & system instruction
-      const systemInstruction = await MemoryService.buildLiveSystemInstruction(userId, conversationId);
+      console.log(`[VoiceSession] Live client connected: user=${userId}, session=${sessionId}, voice=${voice}, conversation=${conversationId || (isIncognito ? 'INCOGNITO' : 'new')}, incognito=${isIncognito}`);
+
+      // 2. Load personalized companion memory & system instruction (or base instruction if incognito)
+      const systemInstruction = isIncognito
+        ? MemoryService.buildIncognitoSystemInstruction
+          ? MemoryService.buildIncognitoSystemInstruction()
+          : 'You are Maya, a modern, helpful, friendly personal AI assistant. Be concise, engaging, and speak naturally.'
+        : await MemoryService.buildLiveSystemInstruction(userId, conversationId);
 
       // Notify mobile client that session setup is starting
       ws.send(JSON.stringify({
@@ -109,15 +124,38 @@ const setupLiveVoiceSocket = (httpServer) => {
             }));
           }
 
-          // Asynchronously persist completed assistant message without blocking real-time audio
-          if (isComplete && content && conversationId) {
-            ConversationService.saveMessage(conversationId, {
-              role: 'ASSISTANT',
-              content,
-              messageType: 'VOICE',
-            }).catch((err) => {
-              console.warn(`[Conversation] Could not persist assistant message: ${err.message}`);
-            });
+          // Asynchronously persist completed user and assistant messages without blocking real-time audio
+          // Strictly bypass ALL storage when in Incognito mode
+          if (!isIncognito && isComplete && content && conversationId && userId) {
+            if (role === 'USER') {
+              ConversationService.saveUserMessage(userId, conversationId, content, 'voice').catch((err) => {
+                console.warn(`[Conversation] Could not persist user message: ${err.message}`);
+              });
+
+              // Query-time historical conversation recall
+              const detection = ConversationSearchService.detectHistoricalQuery(content);
+              if (detection.isHistorical) {
+                ConversationSearchService.getRelevantConversationContext(userId, content)
+                  .then((historicalContext) => {
+                    if (historicalContext && liveSession && liveSession.isConnected) {
+                      console.log(`[VoiceSession] Injecting recalled historical conversation context into live session for ${userId}`);
+                      liveSession.sendTextMessage(`[SYSTEM MEMORY RECALL CONTEXT]\n${historicalContext}`);
+                    }
+                  })
+                  .catch((searchErr) => {
+                    console.warn(`[VoiceSession] Note during historical recall: ${searchErr.message}`);
+                  });
+              }
+            } else if (role === 'ASSISTANT') {
+              ConversationService.saveAssistantMessage(userId, conversationId, content, 'voice').catch((err) => {
+                console.warn(`[Conversation] Could not persist assistant message: ${err.message}`);
+              });
+
+              // Asynchronously extract candidate long-term memories in background
+              MemoryService.extractMemoriesFromTurn(userId, conversationId, content).catch((err) => {
+                console.warn(`[MemoryService] Background extraction note: ${err.message}`);
+              });
+            }
           }
         },
         onTurnComplete: () => {
@@ -183,13 +221,10 @@ const setupLiveVoiceSocket = (httpServer) => {
               // Text fallback or supplemental user message
               if (parsed.text && liveSession) {
                 liveSession.sendTextMessage(parsed.text);
-                // Asynchronously persist user message
-                if (conversationId) {
-                  ConversationService.saveMessage(conversationId, {
-                    role: 'USER',
-                    content: parsed.text,
-                    messageType: 'VOICE',
-                  }).catch(() => {});
+                // Asynchronously persist user message (only if not incognito)
+                if (!isIncognito && conversationId && userId) {
+                  ConversationService.saveUserMessage(userId, conversationId, parsed.text, 'text')
+                    .catch(() => {});
                 }
               }
               break;

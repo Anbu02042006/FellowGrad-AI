@@ -10,7 +10,7 @@ import RegisterScreen from '../screens/Auth/Register/RegisterScreen';
 import { useAuth } from '../context/AuthContext';
 
 export type RootStackParamList = {
-  Home: undefined;
+  Home: { conversationId?: string } | undefined;
   Settings: undefined;
   Account: undefined;
   Login: undefined;

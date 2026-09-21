@@ -1,289 +1,278 @@
 $background: #0A0E21;
-$surface: #1D1D35;
+$surface: #14172B;
+$surfaceElevated: #1D213E;
 $primary: #6C63FF;
+$primaryLight: #8E59FF;
 $text: #FFFFFF;
-$textSecondary: #A0A0B0;
-$inputBackground: #161B33;
-$border: #2A2E45;
-$success: #4CAF50;
-$error: #FF4C4C;
+$textSecondary: #98A2B3;
+$border: #232847;
+$success: #12B76A;
+$error: #F04438;
+$incognitoPurple: #9E77ED;
 
 .container {
   flex: 1;
   background-color: $background;
 }
 
-.header {
+// --------------------------------------------------
+// TOP HEADER
+// --------------------------------------------------
+.topHeader {
   flex-direction: row;
-  justify-content: space-between;
   align-items: center;
-  padding-horizontal: 16px;
-  padding-top: 8px;
-  z-index: 10;
+  justify-content: space-between;
+  padding-horizontal: 20px;
+  padding-top: 14px;
+  padding-bottom: 8px;
 }
 
-.iconButton {
+.profileButton {
   width: 44px;
   height: 44px;
-  border-radius: 22px;
-  background-color: $surface;
   justify-content: center;
   align-items: center;
 }
 
-.profileIconWrapper {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
+.avatarCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
   background-color: #2D63FF;
   justify-content: center;
   align-items: center;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.profileIconText {
-  font-size: 16px;
+.avatarInitial {
   color: #FFFFFF;
+  font-size: 17px;
+  font-weight: 700;
 }
 
-.iconText {
-  font-size: 20px;
-}
-
-.agentSelector {
+.greetingContainer {
   flex: 1;
-  margin-horizontal: 8px;
-  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  padding-horizontal: 12px;
 }
 
-.agentSelectorContent {
-  flex-direction: row;
-  align-items: center;
-  background-color: $surface;
-  padding-horizontal: 16px;
-  padding-vertical: 8px;
+.greetingTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: $text;
+  letter-spacing: -0.2px;
+}
+
+.greetingSubtitle {
+  font-size: 12px;
+  color: $textSecondary;
+  margin-top: 2px;
+}
+
+.incognitoButton {
+  width: 40px;
+  height: 40px;
   border-radius: 20px;
-  min-width: 80px;
+  background-color: $surface;
+  justify-content: center;
+  align-items: center;
+  border-width: 1px;
+  border-color: $border;
 }
 
-.agentNameContainer {
+.incognitoButtonActive {
+  background-color: rgba(158, 119, 237, 0.2);
+  border-color: $incognitoPurple;
+}
+
+.incognitoIcon {
+  font-size: 18px;
+}
+
+// --------------------------------------------------
+// NOTICE BANNER
+// --------------------------------------------------
+.noticeBanner {
+  margin-horizontal: 20px;
+  margin-top: 8px;
+  padding-vertical: 10px;
+  padding-horizontal: 16px;
+  border-radius: 12px;
+  background-color: rgba(158, 119, 237, 0.15);
+  border-width: 1px;
+  border-color: rgba(158, 119, 237, 0.4);
+  align-items: center;
+}
+
+.noticeText {
+  color: #E9D7FE;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+// --------------------------------------------------
+// CENTER STAGE
+// --------------------------------------------------
+.centerStage {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+.orbWrapper {
+  margin-bottom: 24px;
+}
+
+.statusContainer {
   align-items: center;
 }
 
 .agentName {
-  font-size: 16px;
+  font-size: 26px;
+  font-weight: 700;
   color: $text;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.statusText {
+  font-size: 15px;
+  color: $textSecondary;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+.timerBadge {
+  flex-direction: row;
+  align-items: center;
+  background-color: $surface;
+  padding-horizontal: 14px;
+  padding-vertical: 6px;
+  border-radius: 16px;
+  border-width: 1px;
+  border-color: $border;
+  margin-top: 14px;
+}
+
+.timerDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 3.5px;
+  background-color: $error;
+  margin-right: 8px;
+}
+
+.timerValue {
+  color: $text;
+  font-size: 14px;
   font-weight: 600;
 }
 
-.incognitoSubtext {
+// --------------------------------------------------
+// BOTTOM ACTION BAR
+// --------------------------------------------------
+.bottomBar {
+  padding-horizontal: 24px;
+  padding-bottom: 36px;
+  align-items: center;
+}
+
+.controlsRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 380px;
+}
+
+.voiceSelectorPill {
+  flex-direction: row;
+  align-items: center;
+  background-color: $surface;
+  padding-horizontal: 14px;
+  padding-vertical: 10px;
+  border-radius: 24px;
+  border-width: 1px;
+  border-color: $border;
+  min-width: 95px;
+  justify-content: center;
+}
+
+.voiceIcon {
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+.voiceLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+  margin-right: 4px;
+}
+
+.voiceChevron {
   font-size: 10px;
   color: $textSecondary;
-  margin-top: -2px;
 }
 
-.callingIndicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background-color: #FFB800;
-  margin-left: 8px;
-}
-
-.dropdownIcon {
-  color: $text;
-  margin-left: 4px;
-  font-size: 12px;
-}
-
-.content {
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-}
-
-.normalContent {
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.agentCircle {
-  width: 120px;
-  height: 120px;
-  border-radius: 60px;
-  background-color: $surface;
-  justify-content: center;
-  align-items: center;
-}
-
-.agentCircleActive {
-  border-width: 2px;
-  border-color: $primary;
-}
-
-.agentLargeIcon {
-  font-size: 60px;
-}
-
-.timerContainer {
-  margin-top: 16px;
-}
-
-.timerText {
-  font-size: 32px;
-  font-weight: bold;
-  color: $text;
-}
-
-.responseBubble {
-  background-color: $surface;
-  padding: 16px;
-  border-radius: 20px;
-  margin-top: 24px;
-  margin-horizontal: 24px;
-  max-width: 80%;
-}
-
-.userSpeechBubble {
-  background-color: rgba(108, 99, 255, 0.1);
-  border-width: 1px;
-  border-color: $primary;
-  padding: 12px;
-  border-radius: 15px;
-  margin-bottom: 12px;
-  margin-horizontal: 24px;
-  max-width: 70%;
-  align-self: center;
-}
-
-.userSpeechText {
-  color: $textSecondary;
-  font-size: 14px;
-  font-style: italic;
-  text-align: center;
-}
-
-.responseText {
-  color: $text;
-  font-size: 16px;
-  line-height: 22px;
-  text-align: center;
-}
-
-.incognitoInfo {
-  align-items: center;
-  padding-horizontal: 40px;
-}
-
-.incognitoIconCircle {
-  width: 100px;
-  height: 100px;
-  border-radius: 50px;
-  background-color: $surface;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.incognitoLargeIcon {
-  font-size: 50px;
-}
-
-.incognitoTitle {
-  font-size: 24px;
-  font-weight: bold;
-  color: $text;
-  margin-bottom: 12px;
-}
-
-.incognitoDesc {
-  font-size: 16px;
-  color: $textSecondary;
-  text-align: center;
-  line-height: 22px;
-}
-
-.bottomSection {
-  align-items: center;
-  margin-bottom: 32px;
-}
-
-.callButton {
+.micButton {
   width: 80px;
   height: 80px;
   border-radius: 40px;
-  background-color: $surface;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.callButtonActive {
-  background-color: $error;
-}
-
-.callIcon {
-  font-size: 32px;
-  color: $text;
-  transform: rotate(135deg);
-}
-
-.callIconActive {
-  transform: rotate(0deg);
-  font-size: 24px;
-}
-
-.callText {
-  font-size: 14px;
-  color: $textSecondary;
-}
-
-.inputContainer {
-  padding-horizontal: 16px;
-  padding-bottom: 16px;
-}
-
-.inputWrapper {
-  flex-direction: row;
-  align-items: center;
-}
-
-.input {
-  flex: 1;
-  background-color: $inputBackground;
-  border-radius: 25px;
-  padding-horizontal: 24px;
-  height: 50px;
-  color: $text;
-  font-size: 16px;
-}
-
-.sendButton {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
   background-color: $primary;
   justify-content: center;
   align-items: center;
-  margin-left: 12px;
+  elevation: 10;
 }
 
-.sendIcon {
+.micButtonActive {
+  background-color: $error;
+}
+
+.micButtonListening {
+  background-color: #5B8DEF;
+}
+
+.micIcon {
+  font-size: 32px;
   color: #FFFFFF;
-  font-size: 20px;
 }
 
-.disabledInput {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 25px;
-  height: 50px;
-  justify-content: center;
+.micIconActive {
+  font-size: 26px;
+}
+
+.incognitoPill {
+  flex-direction: row;
   align-items: center;
+  background-color: $surface;
+  padding-horizontal: 14px;
+  padding-vertical: 10px;
+  border-radius: 24px;
+  border-width: 1px;
+  border-color: $border;
+  min-width: 95px;
+  justify-content: center;
 }
 
-.disabledInputText {
-  color: rgba(160, 160, 176, 0.6);
-  font-size: 14px;
+.incognitoPillActive {
+  background-color: rgba(158, 119, 237, 0.18);
+  border-color: $incognitoPurple;
+}
+
+.pillIcon {
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.pillLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: $textSecondary;
+}
+
+.pillLabelActive {
+  color: #D6BBFB;
 }

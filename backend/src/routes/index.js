@@ -8,10 +8,12 @@ const aiRoutes = require('./aiRoutes');
 const voiceRoutes = require('./voiceRoutes');
 const liveVoiceRoutes = require('./liveVoiceRoutes');
 const notificationRoutes = require('./notificationRoutes');
+const memoryRoutes = require('./memoryRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/conversations', conversationRoutes);
+router.use('/memories', memoryRoutes);
 router.use('/ai', aiRoutes);
 router.use('/voice/live', liveVoiceRoutes);
 router.use('/voice', voiceRoutes);

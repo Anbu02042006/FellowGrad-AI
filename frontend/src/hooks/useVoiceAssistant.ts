@@ -76,19 +76,24 @@ export const useVoiceAssistant = (conversationId: string | null) => {
   /**
    * Start a real-time Gemini Live voice call
    */
-  const startListening = useCallback(async () => {
-    console.log('[VoiceAssistant] Starting Gemini Live voice call...');
+  const startListening = useCallback(async (voice?: string, incognito?: boolean) => {
+    console.log(`[VoiceAssistant] Starting Gemini Live voice call with voice: ${voice || 'default'}, incognito: ${Boolean(incognito)}...`);
     isCallActiveRef.current = true;
     setError(null);
     setRecognizedText('');
     setLastResponse(null);
 
-    const success = await geminiLiveService.startSession(conversationId, {
-      onStateChange: handleStateChange,
-      onError: handleError,
-      onTranscript: handleTranscript,
-      onInterrupted: handleInterrupted,
-    });
+    const success = await geminiLiveService.startSession(
+      incognito ? null : conversationId,
+      {
+        onStateChange: handleStateChange,
+        onError: handleError,
+        onTranscript: handleTranscript,
+        onInterrupted: handleInterrupted,
+      },
+      voice,
+      incognito
+    );
 
     if (!success) {
       isCallActiveRef.current = false;

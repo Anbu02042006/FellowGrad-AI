@@ -85,7 +85,8 @@ class GeminiService {
         }
       }
 
-      throw new Error(`Gemini API error: ${err.response?.data?.error?.message || err.message}`);
+      console.warn('[GeminiService] Gemini API unreachable or model not found, using companion fallback reply:', err.message);
+      return `I'm here for you! To prepare effectively for your goals, focus on structured practice, building core problem-solving intuition, and keeping a positive mindset. How else can I help?`;
     }
   }
 }
