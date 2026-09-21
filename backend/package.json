@@ -1,0 +1,40 @@
+{
+  "name": "fellowgrad-backend",
+  "version": "1.0.0",
+  "description": "FellowGrad AI - Voice-Driven Personal Academic & Emotional Companion Backend in Node.js & Express",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node test/api.test.js"
+  },
+  "keywords": [
+    "fellowgrad",
+    "express",
+    "nodejs",
+    "gemini",
+    "voice-ai",
+    "tts",
+    "stt"
+  ],
+  "author": "FellowGrad AI Team",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^2.23.0",
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
