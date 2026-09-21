@@ -1,8 +1,10 @@
 package com.fellowgrad
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
@@ -40,6 +42,7 @@ class AudioStreamModule(
 
     private var audioTrack: AudioTrack? = null
     private val isPlayerInitialized = AtomicBoolean(false)
+    private val isFirstChunkInTurn = AtomicBoolean(true)
 
     override fun getName(): String {
         return "AudioStream"
@@ -446,7 +449,7 @@ class AudioStreamModule(
             val attributes =
                 AudioAttributes.Builder()
                     .setUsage(
-                        AudioAttributes.USAGE_VOICE_COMMUNICATION
+                        AudioAttributes.USAGE_MEDIA
                     )
                     .setContentType(
                         AudioAttributes.CONTENT_TYPE_SPEECH
@@ -466,31 +469,47 @@ class AudioStreamModule(
                     format,
                     bufferSize,
                     AudioTrack.MODE_STREAM,
-                    android.media.AudioManager.AUDIO_SESSION_ID_GENERATE
+                    AudioManager.AUDIO_SESSION_ID_GENERATE
                 )
 
             if (
                 audioTrack?.state !=
                 AudioTrack.STATE_INITIALIZED
             ) {
-
+                Log.e(
+                    "AudioStream",
+                    "[AudioStream] AudioTrack failed to initialize! state=${audioTrack?.state}"
+                )
                 promise.reject(
                     "INIT_PLAYER_FAILED",
                     "AudioTrack failed to initialize."
                 )
-
                 return
             }
 
+            audioTrack?.setVolume(AudioTrack.getMaxVolume())
             audioTrack?.play()
 
+            // Ensure loudspeaker routing
+            try {
+                val audioManager =
+                    reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                audioManager?.isSpeakerphoneOn = true
+            } catch (routeErr: Exception) {
+                Log.w("AudioStream", "[AudioStream] Speakerphone routing warning: ${routeErr.message}")
+            }
+
             isPlayerInitialized.set(true)
+            isFirstChunkInTurn.set(true)
 
             Log.d(
                 "AudioStream",
-                "AudioTrack initialized -> " +
-                    "${validSampleRate}Hz / " +
-                    "16-bit / mono"
+                "[AudioStream] AudioTrack initialized -> " +
+                    "state=${audioTrack?.state}, " +
+                    "playState=${audioTrack?.playState}, " +
+                    "sampleRate=${audioTrack?.sampleRate}, " +
+                    "channelCount=${audioTrack?.channelCount}, " +
+                    "audioSessionId=${audioTrack?.audioSessionId}"
             )
 
             promise.resolve(true)
@@ -527,6 +546,7 @@ class AudioStreamModule(
                 !isPlayerInitialized.get() ||
                 audioTrack == null
             ) {
+                Log.w("AudioStream", "[AudioStream] playChunk called but player not initialized")
                 promise.resolve(false)
                 return
             }
@@ -534,25 +554,53 @@ class AudioStreamModule(
             val data =
                 Base64.decode(
                     base64Pcm,
-                    Base64.NO_WRAP
+                    Base64.DEFAULT
                 )
 
             if (data.isNotEmpty()) {
+                val track = audioTrack
+                if (track != null) {
+                    if (isFirstChunkInTurn.compareAndSet(true, false)) {
+                        Log.d(
+                            "AudioStream",
+                            "[Latency] FIRST_AUDIO_WRITE -> bytes=${data.size} written to AudioTrack at ${System.currentTimeMillis()}"
+                        )
+                    }
 
-                val result =
-                    audioTrack?.write(
-                        data,
-                        0,
-                        data.size,
-                        AudioTrack.WRITE_NON_BLOCKING
-                    ) ?: 0
+                    Log.d(
+                        "AudioStream",
+                        "[AudioStream] TRACK STATE -> state=${track.state}, " +
+                            "playState=${track.playState}, " +
+                            "sampleRate=${track.sampleRate}, " +
+                            "channelCount=${track.channelCount}, " +
+                            "audioSessionId=${track.audioSessionId}"
+                    )
 
-                Log.d(
-                    "AudioStream",
-                    "Playback PCM -> " +
-                        "bytes=${data.size}, " +
-                        "written=$result"
-                )
+                    var totalWritten = 0
+                    while (totalWritten < data.size && track.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                        val written = track.write(
+                            data,
+                            totalWritten,
+                            data.size - totalWritten,
+                            AudioTrack.WRITE_BLOCKING
+                        )
+
+                        if (written < 0) {
+                            Log.e(
+                                "AudioStream",
+                                "[AudioStream] AUDIO WRITE ERROR -> bytes=${data.size}, error=$written"
+                            )
+                            break
+                        }
+
+                        totalWritten += written
+                    }
+
+                    Log.d(
+                        "AudioStream",
+                        "[AudioStream] AUDIO WRITE -> bytes=${data.size}, result=$totalWritten"
+                    )
+                }
             }
 
             promise.resolve(true)
@@ -584,6 +632,8 @@ class AudioStreamModule(
     ) {
 
         try {
+            isFirstChunkInTurn.set(true)
+            Log.d("AudioStream", "[AudioStream] FLUSH PLAYER CALLED")
 
             audioTrack?.let { track ->
 
@@ -642,6 +692,7 @@ class AudioStreamModule(
     private fun stopPlayerInternal() {
 
         isPlayerInitialized.set(false)
+        isFirstChunkInTurn.set(true)
 
         audioTrack?.let { track ->
 

@@ -44,6 +44,10 @@ class GeminiLiveSession {
 
     this.inputAudioBytes = 0;
     this.outputAudioBytes = 0;
+
+    // Latency tracking
+    this.lastInputAudioTime = 0;
+    this.isAwaitingTurnResponse = true;
   }
 
   /**
@@ -131,12 +135,12 @@ Respond using voice.
              * Small prefix buffer so the beginning
              * of words is not lost.
              */
-            prefixPaddingMs: 200,
+            prefixPaddingMs: 100,
 
             /**
-             * End the user's turn after silence.
+             * End the user's turn after silence (reduced from 700ms to 400ms for responsiveness).
              */
-            silenceDurationMs: 700,
+            silenceDurationMs: 400,
           },
         },
       };
@@ -286,7 +290,7 @@ Respond using voice.
         serverContent.inputTranscription.finished
       ) {
         console.log(
-          `[GeminiLive] USER TRANSCRIPT COMPLETE: ${this.userTranscriptBuffer}`
+          `[Latency] TURN_COMPLETE: user finished speaking -> "${this.userTranscriptBuffer}"`
         );
 
         if (this.userTranscriptBuffer) {
@@ -330,6 +334,15 @@ Respond using voice.
 
           this.outputAudioBytes +=
             approximateBytes;
+
+          if (this.isAwaitingTurnResponse) {
+            this.isAwaitingTurnResponse = false;
+            const now = Date.now();
+            const elapsed = this.lastInputAudioTime ? (now - this.lastInputAudioTime) : 0;
+            console.log(
+              `[Latency] FIRST_GEMINI_AUDIO -> chunk #1 generated in ${elapsed}ms from last input audio (bytes: ${approximateBytes})`
+            );
+          }
 
           if (
             this.outputAudioChunkCount === 1 ||
@@ -395,6 +408,7 @@ Respond using voice.
       console.log(
         '[GeminiLive] ASSISTANT TURN COMPLETE'
       );
+      this.isAwaitingTurnResponse = true;
 
       if (this.assistantTranscriptBuffer) {
         this.onTranscript({
@@ -441,6 +455,8 @@ Respond using voice.
     }
 
     this.inputAudioChunkCount++;
+    this.lastInputAudioTime = Date.now();
+    this.isAwaitingTurnResponse = true;
 
     const approximateBytes =
       Math.floor(

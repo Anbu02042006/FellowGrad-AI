@@ -42,7 +42,7 @@ const geminiLiveConfig = {
       sampleRate: 16000,
       channels: 1,
       mimeType: 'audio/pcm;rate=16000',
-      chunkSizeMs: 100, // 100ms chunks ~ 3200 bytes
+      chunkSizeMs: 50, // 50ms chunks ~ 1600 bytes
     },
     output: {
       encoding: 'LINEAR16',

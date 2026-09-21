@@ -33,6 +33,10 @@ export class GeminiLiveService {
   // Prevents old/racing sessions from affecting a new session.
   private sessionGeneration = 0;
 
+  // Latency diagnostics
+  private lastUserAudioSentTime = 0;
+  private isAwaitingFirstAudio = true;
+
   async startSession(
     conversationId: string | null,
     callbacks: LiveSessionCallbacks
@@ -212,6 +216,9 @@ export class GeminiLiveService {
               }
 
               // Send PCM audio to Cloud Run WebSocket.
+              this.lastUserAudioSentTime = Date.now();
+              this.isAwaitingFirstAudio = true;
+
               ws.send(
                 JSON.stringify({
                   type: 'audio',
@@ -220,7 +227,7 @@ export class GeminiLiveService {
               );
             },
             inputSampleRate,
-            100
+            50
           );
 
           // Check again after microphone initialization.
@@ -300,9 +307,19 @@ export class GeminiLiveService {
 
             case 'audio':
               if (parsed.data) {
-                console.log(
-                  '[GeminiLive] Received audio chunk from Gemini'
-                );
+                const now = Date.now();
+                if (this.isAwaitingFirstAudio) {
+                  this.isAwaitingFirstAudio = false;
+                  const tTurnaround = this.lastUserAudioSentTime ? (now - this.lastUserAudioSentTime) : 0;
+                  const tTransit = parsed.tServer ? (now - parsed.tServer) : 0;
+                  console.log(
+                    `[Latency] FIRST_GEMINI_AUDIO received (turnaround: ${tTurnaround}ms, WS transit: ${tTransit}ms, length: ${parsed.data.length})`
+                  );
+                } else {
+                  console.log(
+                    `[GeminiLive] OUTPUT AUDIO -> base64 length: ${parsed.data.length}`
+                  );
+                }
 
                 this.callbacks?.onStateChange(
                   'SPEAKING'
@@ -320,6 +337,7 @@ export class GeminiLiveService {
             // ------------------------------------------------------
 
             case 'interrupted':
+              this.isAwaitingFirstAudio = true;
               console.log(
                 '[GeminiLive] Model interrupted. Flushing audio buffer.'
               );

@@ -10,6 +10,7 @@ const { AudioStream } = NativeModules;
 
 export class AudioOutputService {
   private isInitialized = false;
+  private isFirstChunkInTurn = true;
 
   /**
    * Initialize native AudioTrack player for Gemini Live 24kHz output
@@ -24,7 +25,8 @@ export class AudioOutputService {
     try {
       await AudioStream.initPlayer(sampleRate);
       this.isInitialized = true;
-      console.log(`[AudioOutput] Initialized AudioTrack player (${sampleRate}Hz)`);
+      this.isFirstChunkInTurn = true;
+      console.log(`[AudioOutput] PLAYER INITIALIZED -> sampleRate=${sampleRate}`);
       return true;
     } catch (err) {
       console.error('[AudioOutput] Failed to initialize audio player:', err);
@@ -46,9 +48,15 @@ export class AudioOutputService {
     if (!AudioStream) return;
 
     try {
+      if (this.isFirstChunkInTurn) {
+        this.isFirstChunkInTurn = false;
+        console.log(`[Latency] FIRST_AUDIO_PLAY -> passing chunk (${base64Chunk?.length} chars) to AudioTrack at ${Date.now()}`);
+      } else {
+        console.log(`[AudioOutput] PLAY CHUNK -> base64 length: ${base64Chunk?.length || 0}`);
+      }
       await AudioStream.playChunk(base64Chunk);
     } catch (err) {
-      console.warn('[AudioOutput] Error playing audio chunk:', err);
+      console.error('[AudioOutput] PLAY ERROR ->', err);
     }
   }
 
@@ -57,10 +65,11 @@ export class AudioOutputService {
    * Stops the current speech from playing immediately.
    */
   async flush(): Promise<void> {
+    this.isFirstChunkInTurn = true;
     if (!this.isInitialized || !AudioStream) return;
 
     try {
-      console.log('[AudioOutput] Flushing audio player buffer (barge-in)');
+      console.log('[AudioOutput] FLUSH CALLED');
       await AudioStream.flushPlayer();
     } catch (err) {
       console.warn('[AudioOutput] Error flushing audio player:', err);
@@ -71,6 +80,7 @@ export class AudioOutputService {
    * Stop audio playback completely
    */
   async stop(): Promise<void> {
+    this.isFirstChunkInTurn = true;
     this.isInitialized = false;
     if (AudioStream) {
       try {

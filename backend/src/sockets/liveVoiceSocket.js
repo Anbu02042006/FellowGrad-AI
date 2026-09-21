@@ -81,6 +81,7 @@ const setupLiveVoiceSocket = (httpServer) => {
             ws.send(JSON.stringify({
               type: 'audio',
               data: base64Audio,
+              tServer: Date.now(),
             }));
           }
         },
