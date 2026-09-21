@@ -1,9 +1,3 @@
-/**
- * Gemini Live Service for React Native Client
- * Manages the live session lifecycle, WebSocket streaming, microphone input,
- * speaker output, and instant barge-in / interruption handling.
- */
-
 import voiceApi from './api/voiceApi';
 import audioInputService from './audioInputService';
 import audioOutputService from './audioOutputService';
@@ -22,7 +16,11 @@ export type LiveAssistantState =
 export interface LiveSessionCallbacks {
   onStateChange: (state: LiveAssistantState) => void;
   onError: (errorMessage: string) => void;
-  onTranscript?: (transcript: { role: 'USER' | 'ASSISTANT'; content: string; isComplete: boolean }) => void;
+  onTranscript?: (transcript: {
+    role: 'USER' | 'ASSISTANT';
+    content: string;
+    isComplete: boolean;
+  }) => void;
   onInterrupted?: () => void;
 }
 
@@ -32,18 +30,36 @@ export class GeminiLiveService {
   private callbacks: LiveSessionCallbacks | null = null;
   private currentConversationId: string | null = null;
 
-  /**
-   * Start a real-time voice session with Gemini Live
-   * @param conversationId
-   * @param callbacks
-   */
+  // Prevents old/racing sessions from affecting a new session.
+  private sessionGeneration = 0;
+
   async startSession(
     conversationId: string | null,
     callbacks: LiveSessionCallbacks
   ): Promise<boolean> {
-    if (this.isSessionActive) {
-      console.log('[GeminiLive] Session already active. Stopping previous session first.');
+    const generation = ++this.sessionGeneration;
+
+    console.log(
+      `[GeminiLive] Starting session generation ${generation}`
+    );
+
+    // Close any existing session first.
+    if (this.isSessionActive || this.ws) {
+      console.log(
+        '[GeminiLive] Existing session detected. Closing it first.'
+      );
+
       await this.closeSession();
+
+      // Another startSession() may have started while
+      // the previous session was being closed.
+      if (generation !== this.sessionGeneration) {
+        console.log(
+          `[GeminiLive] Session generation ${generation} became stale.`
+        );
+
+        return false;
+      }
     }
 
     this.callbacks = callbacks;
@@ -53,183 +69,522 @@ export class GeminiLiveService {
     try {
       this.callbacks.onStateChange('CONNECTING');
 
-      // 1. Request secure short-lived live session token from FellowGrad backend
-      console.log('[GeminiLive] Requesting live session credential from backend...');
-      const sessionResponse = await voiceApi.createLiveSession(conversationId);
-      const { sessionToken, wsEndpoint, audioConfig } = sessionResponse.data;
+      // ============================================================
+      // 1. Get secure short-lived Gemini Live session credentials
+      // ============================================================
 
-      if (!sessionToken) {
-        throw new Error('Failed to obtain live session token');
+      console.log(
+        '[GeminiLive] Requesting live session credential from backend...'
+      );
+
+      const sessionResponse =
+        await voiceApi.createLiveSession(conversationId);
+
+      // Make sure this request still belongs to the active session.
+      if (generation !== this.sessionGeneration) {
+        console.log(
+          `[GeminiLive] Ignoring stale session ${generation} after token response.`
+        );
+
+        return false;
       }
 
-      // 2. Initialize native AudioTrack player for Gemini 24kHz output
-      const outputSampleRate = audioConfig?.outputSampleRate || 24000;
+      const {
+        sessionToken,
+        wsEndpoint,
+        audioConfig,
+      } = sessionResponse.data;
+
+      if (!sessionToken) {
+        throw new Error(
+          'Failed to obtain live session token'
+        );
+      }
+
+      // ============================================================
+      // 2. Initialize native AudioTrack for Gemini 24kHz output
+      // ============================================================
+
+      const outputSampleRate =
+        audioConfig?.outputSampleRate || 24000;
+
+      console.log(
+        `[GeminiLive] Initializing audio output at ${outputSampleRate}Hz`
+      );
+
       await audioOutputService.init(outputSampleRate);
 
-      // 3. Connect to backend WebSocket proxy
+      if (generation !== this.sessionGeneration) {
+        console.log(
+          `[GeminiLive] Session ${generation} became stale after audio initialization.`
+        );
+
+        await audioOutputService.stop();
+
+        return false;
+      }
+
+      // ============================================================
+      // 3. Connect to Cloud Run WebSocket proxy
+      // ============================================================
+
       const wsBase = getWsBaseUrl();
-      const wsUrl = `${wsBase}${wsEndpoint}?token=${sessionToken}`;
-      console.log(`[GeminiLive] Connecting to WebSocket proxy: ${wsBase}${wsEndpoint}`);
 
-      this.ws = new WebSocket(wsUrl);
+      const wsUrl =
+        `${wsBase}${wsEndpoint}` +
+        `?token=${encodeURIComponent(sessionToken)}`;
 
-      this.ws.onopen = async () => {
-        console.log('[GeminiLive] WebSocket connection established');
-        if (!this.isSessionActive) return;
+      console.log(
+        `[GeminiLive] Connecting to WebSocket proxy: ${wsBase}${wsEndpoint}`
+      );
 
-        // 4. Start native microphone capture (16kHz 16-bit mono PCM)
+      const ws = new WebSocket(wsUrl);
+
+      // This WebSocket belongs to this specific session generation.
+      this.ws = ws;
+
+      // ============================================================
+      // WEBSOCKET OPEN
+      // ============================================================
+
+      ws.onopen = async () => {
+        console.log(
+          `[GeminiLive] WebSocket connected (generation ${generation})`
+        );
+
+        // Ignore an old/stale WebSocket.
+        if (
+          generation !== this.sessionGeneration ||
+          this.ws !== ws ||
+          !this.isSessionActive
+        ) {
+          console.log(
+            `[GeminiLive] Ignoring stale WebSocket open (${generation})`
+          );
+
+          try {
+            ws.close(1000, 'Stale session');
+          } catch { }
+
+          return;
+        }
+
         try {
-          const inputSampleRate = audioConfig?.inputSampleRate || 16000;
-          await audioInputService.startCapture((base64Chunk: string) => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              this.ws.send(JSON.stringify({
-                type: 'audio',
-                data: base64Chunk,
-              }));
-            }
-          }, inputSampleRate, 100);
+          // ========================================================
+          // 4. Start native microphone capture
+          // ========================================================
 
-          console.log('[GeminiLive] Microphone stream active. Listening...');
+          const inputSampleRate =
+            audioConfig?.inputSampleRate || 16000;
+
+          console.log(
+            `[GeminiLive] Starting microphone at ${inputSampleRate}Hz`
+          );
+
+          // Debug counter for microphone PCM chunks.
+          let audioChunkCount = 0;
+
+          await audioInputService.startCapture(
+            (base64Chunk: string) => {
+              // Never send audio through an old socket.
+              if (
+                generation !== this.sessionGeneration ||
+                this.ws !== ws ||
+                ws.readyState !== WebSocket.OPEN ||
+                !this.isSessionActive
+              ) {
+                return;
+              }
+
+              audioChunkCount++;
+
+              // Print first chunk and then every 50 chunks.
+              //
+              // 100ms chunks:
+              // 50 chunks ≈ 5 seconds of audio.
+              if (
+                audioChunkCount === 1 ||
+                audioChunkCount % 50 === 0
+              ) {
+                console.log(
+                  `[GeminiLive] Sending audio chunk #${audioChunkCount}, base64 length: ${base64Chunk.length}`
+                );
+              }
+
+              // Send PCM audio to Cloud Run WebSocket.
+              ws.send(
+                JSON.stringify({
+                  type: 'audio',
+                  data: base64Chunk,
+                })
+              );
+            },
+            inputSampleRate,
+            100
+          );
+
+          // Check again after microphone initialization.
+          if (
+            generation !== this.sessionGeneration ||
+            this.ws !== ws ||
+            !this.isSessionActive
+          ) {
+            return;
+          }
+
+          console.log(
+            '[GeminiLive] Microphone stream active. Listening...'
+          );
+
           this.callbacks?.onStateChange('LISTENING');
         } catch (micErr: any) {
-          console.error('[GeminiLive] Error starting microphone capture:', micErr);
-          this.callbacks?.onError(micErr?.message || 'Microphone permission denied');
+          console.error(
+            '[GeminiLive] Error starting microphone capture:',
+            micErr
+          );
+
+          this.callbacks?.onError(
+            micErr?.message ||
+            'Microphone permission denied'
+          );
+
           this.callbacks?.onStateChange('ERROR');
-          await this.closeSession();
+
+          if (generation === this.sessionGeneration) {
+            await this.closeSession();
+          }
         }
       };
 
-      this.ws.onmessage = async (event: WebSocketMessageEvent) => {
+      // ============================================================
+      // WEBSOCKET MESSAGE
+      // ============================================================
+
+      ws.onmessage = async (
+        event: WebSocketMessageEvent
+      ) => {
+        // Ignore messages from stale sockets.
+        if (
+          generation !== this.sessionGeneration ||
+          this.ws !== ws
+        ) {
+          return;
+        }
+
         try {
           const parsed = JSON.parse(event.data);
 
           switch (parsed.type) {
+            // ------------------------------------------------------
+            // Server status
+            // ------------------------------------------------------
+
             case 'status':
               if (parsed.status === 'LISTENING') {
-                this.callbacks?.onStateChange('LISTENING');
-              } else if (parsed.status === 'CONNECTING') {
-                this.callbacks?.onStateChange('CONNECTING');
+                this.callbacks?.onStateChange(
+                  'LISTENING'
+                );
+              } else if (
+                parsed.status === 'CONNECTING'
+              ) {
+                this.callbacks?.onStateChange(
+                  'CONNECTING'
+                );
               }
+
               break;
+
+            // ------------------------------------------------------
+            // Gemini audio response
+            // ------------------------------------------------------
 
             case 'audio':
-              // Streaming audio chunk from Gemini Live
               if (parsed.data) {
-                this.callbacks?.onStateChange('SPEAKING');
-                await audioOutputService.playChunk(parsed.data);
+                console.log(
+                  '[GeminiLive] Received audio chunk from Gemini'
+                );
+
+                this.callbacks?.onStateChange(
+                  'SPEAKING'
+                );
+
+                await audioOutputService.playChunk(
+                  parsed.data
+                );
               }
+
               break;
 
+            // ------------------------------------------------------
+            // Gemini interrupted
+            // ------------------------------------------------------
+
             case 'interrupted':
-              // Barge-in detected by Gemini Live! Instantly flush speaker buffer
-              console.log('[GeminiLive] Model was interrupted. Flushing audio buffer.');
+              console.log(
+                '[GeminiLive] Model interrupted. Flushing audio buffer.'
+              );
+
               await audioOutputService.flush();
+
               this.callbacks?.onInterrupted?.();
-              this.callbacks?.onStateChange('LISTENING');
+
+              this.callbacks?.onStateChange(
+                'LISTENING'
+              );
+
               break;
+
+            // ------------------------------------------------------
+            // Transcript
+            // ------------------------------------------------------
 
             case 'transcript':
               if (parsed.content) {
                 this.callbacks?.onTranscript?.({
                   role: parsed.role,
                   content: parsed.content,
-                  isComplete: parsed.isComplete || false,
+                  isComplete:
+                    parsed.isComplete || false,
                 });
               }
+
               break;
+
+            // ------------------------------------------------------
+            // Server error
+            // ------------------------------------------------------
 
             case 'error':
-              console.error('[GeminiLive] Error received from server:', parsed.message);
-              this.callbacks?.onError(parsed.message || 'Gemini Live encountered an error');
+              console.error(
+                '[GeminiLive] Server error:',
+                parsed.message
+              );
+
+              this.callbacks?.onError(
+                parsed.message ||
+                'Gemini Live encountered an error'
+              );
+
               break;
 
+            // ------------------------------------------------------
+            // Server closed
+            // ------------------------------------------------------
+
             case 'closed':
-              console.log('[GeminiLive] Server notified session closed:', parsed.reason);
-              await this.closeSession();
+              console.log(
+                '[GeminiLive] Server closed session:',
+                parsed.reason
+              );
+
+              if (
+                generation === this.sessionGeneration
+              ) {
+                await this.closeSession();
+              }
+
               break;
           }
         } catch (msgErr) {
-          console.error('[GeminiLive] Error parsing WebSocket message:', msgErr);
+          console.error(
+            '[GeminiLive] Error parsing WebSocket message:',
+            msgErr
+          );
         }
       };
 
-      this.ws.onerror = (event: WebSocketErrorEvent) => {
-        console.error('[GeminiLive] WebSocket transport error:', event);
-        this.callbacks?.onError('Network error communicating with voice server');
+      // ============================================================
+      // WEBSOCKET ERROR
+      // ============================================================
+
+      ws.onerror = (
+        event: WebSocketErrorEvent
+      ) => {
+        // Ignore errors from stale sockets.
+        if (
+          generation !== this.sessionGeneration ||
+          this.ws !== ws
+        ) {
+          return;
+        }
+
+        console.error(
+          '[GeminiLive] WebSocket transport error:',
+          event
+        );
+
+        this.callbacks?.onError(
+          'Network error communicating with voice server'
+        );
+
         this.callbacks?.onStateChange('ERROR');
       };
 
-      this.ws.onclose = async (event: WebSocketCloseEvent) => {
-        console.log(`[GeminiLive] WebSocket closed (code: ${event.code}, reason: ${event.reason})`);
-        await this.cleanup();
+      // ============================================================
+      // WEBSOCKET CLOSE
+      // ============================================================
+
+      ws.onclose = async (
+        event: WebSocketCloseEvent
+      ) => {
+        console.log(
+          `[GeminiLive] WebSocket closed ` +
+          `(generation ${generation}, ` +
+          `code: ${event.code}, ` +
+          `reason: ${event.reason})`
+        );
+
+        // IMPORTANT:
+        // An old socket must never clean up a newer session.
+        if (
+          generation !== this.sessionGeneration ||
+          this.ws !== ws
+        ) {
+          console.log(
+            `[GeminiLive] Ignoring close from stale WebSocket ${generation}`
+          );
+
+          return;
+        }
+
+        await this.cleanup(ws);
+
         this.callbacks?.onStateChange('IDLE');
       };
 
       return true;
     } catch (err: any) {
-      console.error('[GeminiLive] Failed to start live session:', err);
-      const message = err?.response?.data?.message || err?.message || 'Unable to connect to voice assistant';
+      // Ignore errors from stale session attempts.
+      if (generation !== this.sessionGeneration) {
+        return false;
+      }
+
+      console.error(
+        '[GeminiLive] Failed to start live session:',
+        err
+      );
+
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Unable to connect to voice assistant';
+
       this.callbacks?.onError(message);
+
       this.callbacks?.onStateChange('ERROR');
+
       await this.closeSession();
+
       return false;
     }
   }
 
-  /**
-   * Send a text message turn to Gemini Live
-   */
+  // ================================================================
+  // SEND TEXT MESSAGE
+  // ================================================================
+
   sendTextMessage(text: string): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
-        type: 'text',
-        text,
-      }));
+    if (
+      this.ws &&
+      this.ws.readyState === WebSocket.OPEN &&
+      this.isSessionActive
+    ) {
+      this.ws.send(
+        JSON.stringify({
+          type: 'text',
+          text,
+        })
+      );
     }
   }
 
-  /**
-   * Stop current audio playback immediately
-   */
+  // ================================================================
+  // STOP SPEAKING / BARGE-IN
+  // ================================================================
+
   async stopSpeaking(): Promise<void> {
+    console.log(
+      '[GeminiLive] Flushing assistant audio playback'
+    );
+
     await audioOutputService.flush();
   }
 
-  /**
-   * Cleanly terminate session and release audio hardware
-   */
+  // ================================================================
+  // CLOSE SESSION
+  // ================================================================
+
   async closeSession(): Promise<void> {
+    // Invalidate all previous asynchronous operations.
+    ++this.sessionGeneration;
+
     this.isSessionActive = false;
-    await this.cleanup();
+
+    const ws = this.ws;
+
+    await this.cleanup(ws);
+
     this.callbacks?.onStateChange('IDLE');
   }
 
-  private async cleanup(): Promise<void> {
+  // ================================================================
+  // CLEANUP
+  // ================================================================
+
+  private async cleanup(
+    socket?: WebSocket | null
+  ): Promise<void> {
     this.isSessionActive = false;
 
-    // 1. Stop microphone capture
+    // Stop microphone.
     await audioInputService.stopCapture();
 
-    // 2. Stop audio playback
+    // Stop speaker.
     await audioOutputService.stop();
 
-    // 3. Close WebSocket connection
-    if (this.ws) {
+    const wsToClose = socket || this.ws;
+
+    if (wsToClose) {
       try {
-        if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-          this.ws.close(1000, 'User ended session');
+        if (
+          wsToClose.readyState ===
+          WebSocket.OPEN ||
+          wsToClose.readyState ===
+          WebSocket.CONNECTING
+        ) {
+          wsToClose.close(
+            1000,
+            'User ended session'
+          );
         }
       } catch (wsErr) {
-        console.warn('[GeminiLive] Error closing WebSocket:', wsErr);
+        console.warn(
+          '[GeminiLive] Error closing WebSocket:',
+          wsErr
+        );
       }
+    }
+
+    // Only clear the global WebSocket if this is
+    // actually the socket we are cleaning up.
+    if (
+      !socket ||
+      this.ws === socket
+    ) {
       this.ws = null;
     }
   }
+
+  // ================================================================
+  // SESSION STATUS
+  // ================================================================
 
   get isActive(): boolean {
     return this.isSessionActive;
   }
 }
 
-const geminiLiveService = new GeminiLiveService();
+const geminiLiveService =
+  new GeminiLiveService();
+
 export default geminiLiveService;
