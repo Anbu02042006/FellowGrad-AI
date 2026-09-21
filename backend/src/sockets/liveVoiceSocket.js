@@ -141,11 +141,12 @@ const setupLiveVoiceSocket = (httpServer) => {
       }));
 
       // 4. Handle incoming messages from mobile client
-      ws.on('message', async (rawMessage) => {
+      ws.on('message', async (rawMessage, isBinary) => {
         try {
           // Check if message is binary audio buffer or JSON command
-          if (Buffer.isBuffer(rawMessage)) {
+          if (isBinary) {
             // Raw binary PCM chunk from mobile client (16kHz 16-bit mono)
+            console.log(`[LiveVoiceSocket] BINARY AUDIO -> bytes: ${rawMessage.length}`);
             const base64Audio = rawMessage.toString('base64');
             liveSession?.sendAudioChunk(base64Audio);
             return;
@@ -157,6 +158,7 @@ const setupLiveVoiceSocket = (httpServer) => {
             case 'audio':
               // Base64-encoded PCM audio chunk
               if (parsed.data && liveSession) {
+                console.log(`[LiveVoiceSocket] TEXT AUDIO -> base64 length: ${parsed.data.length}`);
                 liveSession.sendAudioChunk(parsed.data);
               }
               break;
