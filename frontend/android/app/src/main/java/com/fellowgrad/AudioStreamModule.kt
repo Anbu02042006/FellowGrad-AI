@@ -8,6 +8,8 @@ import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.NoiseSuppressor
 import android.util.Base64
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -26,15 +28,19 @@ class AudioStreamModule(
 ) : ReactContextBaseJavaModule(reactContext) {
 
     // =========================================================================
-    // RECORDING STATE
+    // RECORDING STATE & HARDWARE AUDIO FX
     // =========================================================================
 
     private var audioRecord: AudioRecord? = null
     private var recordingThread: Thread? = null
     private val isRecording = AtomicBoolean(false)
+    private var echoCanceler: AcousticEchoCanceler? = null
+    private var noiseSuppressor: NoiseSuppressor? = null
 
-    // Debug counter for PCM diagnostics
+    // Debug counters for PCM diagnostics
     private var debugChunkCounter = 0
+    private var totalBytesReadRecorded: Long = 0
+    private var totalChunksRecorded: Long = 0
 
     // =========================================================================
     // PLAYBACK STATE
@@ -157,11 +163,18 @@ class AudioStreamModule(
             )
 
             // -------------------------------------------------------------
-            // Create AudioRecord
-            //
-            // VOICE_COMMUNICATION gives Android's communication
-            // audio processing such as AEC / noise suppression
+            // Configure AudioManager for VoIP/Communication mode
+            // This enables hardware Acoustic Echo Cancellation (AEC)
+            // and Noise Suppression on device DSP.
             // -------------------------------------------------------------
+            val audioManager = reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            try {
+                audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
+                audioManager?.isSpeakerphoneOn = true
+                Log.d("AudioStream", "[AudioStream] AudioManager mode set to MODE_IN_COMMUNICATION, speakerphoneOn=true")
+            } catch (amErr: Exception) {
+                Log.w("AudioStream", "[AudioStream] Warning configuring AudioManager: ${amErr.message}")
+            }
 
             audioRecord = AudioRecord(
                 MediaRecorder.AudioSource.VOICE_COMMUNICATION,
@@ -183,10 +196,42 @@ class AudioStreamModule(
             }
 
             // -------------------------------------------------------------
+            // Hardware Echo Cancellation & Noise Suppression
+            // -------------------------------------------------------------
+            val audioSessionId = audioRecord?.audioSessionId ?: 0
+            if (audioSessionId != 0) {
+                if (AcousticEchoCanceler.isAvailable()) {
+                    try {
+                        echoCanceler = AcousticEchoCanceler.create(audioSessionId)
+                        echoCanceler?.enabled = true
+                        Log.d("AudioStream", "[AudioStream] Hardware AcousticEchoCanceler ENABLED on session $audioSessionId (active=${echoCanceler?.enabled})")
+                    } catch (aecErr: Exception) {
+                        Log.w("AudioStream", "[AudioStream] Could not enable AcousticEchoCanceler: ${aecErr.message}")
+                    }
+                } else {
+                    Log.w("AudioStream", "[AudioStream] AcousticEchoCanceler not available on this device hardware")
+                }
+
+                if (NoiseSuppressor.isAvailable()) {
+                    try {
+                        noiseSuppressor = NoiseSuppressor.create(audioSessionId)
+                        noiseSuppressor?.enabled = true
+                        Log.d("AudioStream", "[AudioStream] Hardware NoiseSuppressor ENABLED on session $audioSessionId (active=${noiseSuppressor?.enabled})")
+                    } catch (nsErr: Exception) {
+                        Log.w("AudioStream", "[AudioStream] Could not enable NoiseSuppressor: ${nsErr.message}")
+                    }
+                } else {
+                    Log.w("AudioStream", "[AudioStream] NoiseSuppressor not available on this device hardware")
+                }
+            }
+
+            // -------------------------------------------------------------
             // Start recording
             // -------------------------------------------------------------
 
             debugChunkCounter = 0
+            totalBytesReadRecorded = 0
+            totalChunksRecorded = 0
 
             audioRecord?.startRecording()
 
@@ -197,7 +242,7 @@ class AudioStreamModule(
                 "Recording started -> " +
                     "${validSampleRate}Hz / " +
                     "16-bit / mono / " +
-                    "${validChunkMs}ms"
+                    "${validChunkMs}ms (AEC=${echoCanceler?.enabled == true}, NS=${noiseSuppressor?.enabled == true})"
             )
 
             // -------------------------------------------------------------
@@ -271,21 +316,24 @@ class AudioStreamModule(
                                 0.0
                             }
 
+                        totalBytesReadRecorded += bytesRead
+                        totalChunksRecorded++
                         debugChunkCounter++
 
-                        // Log every 20 chunks
+                        // Log periodic chunk diagnostics
                         if (
                             debugChunkCounter == 1 ||
-                            debugChunkCounter % 20 == 0
+                            debugChunkCounter % 50 == 0
                         ) {
 
                             Log.d(
                                 "AudioStream",
-                                "PCM DEBUG -> " +
+                                "PCM DIAGNOSTIC -> " +
                                     "chunk=$debugChunkCounter, " +
+                                    "totalBytes=$totalBytesReadRecorded, " +
                                     "bytes=$bytesRead, " +
                                     "samples=$sampleCount, " +
-                                    "rms=$rms, " +
+                                    "rms=${String.format("%.2f", rms)}, " +
                                     "nonZero=$nonZeroSamples"
                             )
                         }
@@ -364,6 +412,17 @@ class AudioStreamModule(
             recordingThread?.interrupt()
             recordingThread = null
 
+            // Release hardware audio effects
+            try {
+                echoCanceler?.release()
+                echoCanceler = null
+            } catch (_: Exception) {}
+
+            try {
+                noiseSuppressor?.release()
+                noiseSuppressor = null
+            } catch (_: Exception) {}
+
             audioRecord?.let {
 
                 try {
@@ -386,12 +445,23 @@ class AudioStreamModule(
 
             audioRecord = null
 
-            debugChunkCounter = 0
+            // If player is not running either, reset AudioManager mode
+            if (!isPlayerInitialized.get()) {
+                try {
+                    val audioManager = reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                    audioManager?.mode = AudioManager.MODE_NORMAL
+                    Log.d("AudioStream", "[AudioStream] AudioManager mode restored to MODE_NORMAL")
+                } catch (_: Exception) {}
+            }
 
             Log.d(
                 "AudioStream",
-                "Recording stopped"
+                "Recording stopped -> totalChunks=$totalChunksRecorded, totalBytes=$totalBytesReadRecorded"
             )
+
+            debugChunkCounter = 0
+            totalBytesReadRecorded = 0
+            totalChunksRecorded = 0
 
             promise.resolve(true)
 
@@ -439,8 +509,8 @@ class AudioStreamModule(
 
             val bufferSize =
                 Math.max(
-                    minBufferSize * 4,
-                    32768
+                    minBufferSize * 2,
+                    8192
                 )
 
             // Release previous player
@@ -449,7 +519,7 @@ class AudioStreamModule(
             val attributes =
                 AudioAttributes.Builder()
                     .setUsage(
-                        AudioAttributes.USAGE_MEDIA
+                        AudioAttributes.USAGE_VOICE_COMMUNICATION
                     )
                     .setContentType(
                         AudioAttributes.CONTENT_TYPE_SPEECH
@@ -490,11 +560,13 @@ class AudioStreamModule(
             audioTrack?.setVolume(AudioTrack.getMaxVolume())
             audioTrack?.play()
 
-            // Ensure loudspeaker routing
+            // Ensure communication mode & loudspeaker routing
             try {
                 val audioManager =
                     reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
                 audioManager?.isSpeakerphoneOn = true
+                Log.d("AudioStream", "[AudioStream] Player initialized: AudioManager mode=MODE_IN_COMMUNICATION, speakerphoneOn=true")
             } catch (routeErr: Exception) {
                 Log.w("AudioStream", "[AudioStream] Speakerphone routing warning: ${routeErr.message}")
             }
@@ -567,22 +639,13 @@ class AudioStreamModule(
                         )
                     }
 
-                    Log.d(
-                        "AudioStream",
-                        "[AudioStream] TRACK STATE -> state=${track.state}, " +
-                            "playState=${track.playState}, " +
-                            "sampleRate=${track.sampleRate}, " +
-                            "channelCount=${track.channelCount}, " +
-                            "audioSessionId=${track.audioSessionId}"
-                    )
-
                     var totalWritten = 0
                     while (totalWritten < data.size && track.playState == AudioTrack.PLAYSTATE_PLAYING) {
                         val written = track.write(
                             data,
                             totalWritten,
                             data.size - totalWritten,
-                            AudioTrack.WRITE_BLOCKING
+                            AudioTrack.WRITE_NON_BLOCKING
                         )
 
                         if (written < 0) {
@@ -595,11 +658,6 @@ class AudioStreamModule(
 
                         totalWritten += written
                     }
-
-                    Log.d(
-                        "AudioStream",
-                        "[AudioStream] AUDIO WRITE -> bytes=${data.size}, result=$totalWritten"
-                    )
                 }
             }
 
@@ -633,7 +691,7 @@ class AudioStreamModule(
 
         try {
             isFirstChunkInTurn.set(true)
-            Log.d("AudioStream", "[AudioStream] FLUSH PLAYER CALLED")
+            Log.d("AudioStream", "[AudioStream] FLUSH PLAYER CALLED (barge-in yield)")
 
             audioTrack?.let { track ->
 
@@ -718,6 +776,15 @@ class AudioStreamModule(
         }
 
         audioTrack = null
+
+        // Revert audio mode to normal if recording is also stopped
+        if (!isRecording.get()) {
+            try {
+                val audioManager = reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                audioManager?.mode = AudioManager.MODE_NORMAL
+                Log.d("AudioStream", "[AudioStream] AudioManager mode restored to MODE_NORMAL on player stop")
+            } catch (_: Exception) {}
+        }
     }
 
     // =========================================================================
@@ -731,12 +798,26 @@ class AudioStreamModule(
         isRecording.set(false)
 
         try {
+            echoCanceler?.release()
+            echoCanceler = null
+        } catch (_: Exception) {}
+
+        try {
+            noiseSuppressor?.release()
+            noiseSuppressor = null
+        } catch (_: Exception) {}
+
+        try {
             audioRecord?.release()
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
 
         audioRecord = null
 
         stopPlayerInternal()
+
+        try {
+            val audioManager = reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audioManager?.mode = AudioManager.MODE_NORMAL
+        } catch (_: Exception) {}
     }
 }
