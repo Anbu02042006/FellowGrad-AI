@@ -15,6 +15,7 @@ class GeminiLiveSession {
     conversationId,
     systemInstruction,
     voice,
+    vadConfig,
     onAudioChunk,
     onInterrupted,
     onTranscript,
@@ -25,6 +26,7 @@ class GeminiLiveSession {
     this.userId = userId;
     this.conversationId = conversationId;
     this.systemInstruction = systemInstruction;
+    this.vadConfig = vadConfig || null;
 
     // Validate voice against whitelist, fallback to default
     this.voice = (voice && geminiLiveConfig.ALLOWED_VOICES.includes(voice))
@@ -51,9 +53,21 @@ class GeminiLiveSession {
     this.inputAudioBytes = 0;
     this.outputAudioBytes = 0;
 
-    // Latency tracking
+    // Turn Latency Tracking (Full Duplex Phone Call Model)
     this.lastInputAudioTime = 0;
+    this.turnIndex = 0;
     this.isAwaitingTurnResponse = true;
+    this.turnMetrics = [];
+    this.currentTurn = {
+      turnIndex: 0,
+      speechStartTime: 0,
+      lastInputAudioTime: 0,
+      geminiEndOfTurnTime: 0,
+      firstGeminiAudioTime: 0,
+      userText: '',
+      assistantText: '',
+      interrupted: false,
+    };
   }
 
   /**
@@ -120,38 +134,33 @@ Respond using voice.
         outputAudioTranscription: {},
 
         /**
-         * Keep automatic VAD enabled.
+         * Automatic Voice Activity Detection (VAD)
          *
-         * Gemini automatically detects when the
-         * user starts and stops speaking.
+         * - prefixPaddingMs: 300ms lookback preserves initial syllables & consonant onsets
+         * - silenceDurationMs: 400ms preserves natural mid-thought pauses without cutoffs
+         * - startOfSpeechSensitivity: calibrated with hardware AEC to prevent false triggers
          */
         realtimeInputConfig: {
           automaticActivityDetection: {
             disabled: false,
-
-            /**
-             * Lower start-of-speech sensitivity so speaker bleed
-             * or quiet ambient noise does not cause false barge-in
-             * interruptions.
-             */
-            startOfSpeechSensitivity: 'START_SENSITIVITY_LOW',
-
-            /**
-             * Small prefix buffer so the beginning
-             * of words is not lost.
-             */
-            prefixPaddingMs: 100,
-
-            /**
-             * End the user's turn after silence (reduced from 700ms to 400ms for responsiveness).
-             */
-            silenceDurationMs: 400,
+            startOfSpeechSensitivity:
+              this.vadConfig?.startOfSpeechSensitivity ||
+              geminiLiveConfig.vad?.startOfSpeechSensitivity ||
+              'START_SENSITIVITY_LOW',
+            prefixPaddingMs:
+              this.vadConfig?.prefixPaddingMs ??
+              geminiLiveConfig.vad?.prefixPaddingMs ??
+              300,
+            silenceDurationMs:
+              this.vadConfig?.silenceDurationMs ??
+              geminiLiveConfig.vad?.silenceDurationMs ??
+              400,
           },
         },
       };
 
       console.log(
-        '[GeminiLive] Live configuration prepared'
+        `[GeminiLive] Live configuration prepared (VAD: prefixPadding=${liveConfig.realtimeInputConfig.automaticActivityDetection.prefixPaddingMs}ms, silenceDuration=${liveConfig.realtimeInputConfig.automaticActivityDetection.silenceDurationMs}ms, sensitivity=${liveConfig.realtimeInputConfig.automaticActivityDetection.startOfSpeechSensitivity})`
       );
 
       this.session = await this.ai.live.connect({
@@ -259,10 +268,15 @@ Respond using voice.
 
     if (serverContent.interrupted) {
       console.log(
-        '[GeminiLive] User interruption detected'
+        `[GeminiLive] User interruption detected on Turn #${this.turnIndex}`
       );
 
+      if (this.currentTurn) {
+        this.currentTurn.interrupted = true;
+      }
+
       this.assistantTranscriptBuffer = '';
+      this.isAwaitingTurnResponse = true;
 
       this.onInterrupted();
 
@@ -283,6 +297,9 @@ Respond using voice.
         );
 
         this.userTranscriptBuffer += transcript;
+        if (this.currentTurn) {
+          this.currentTurn.userText = this.userTranscriptBuffer;
+        }
 
         this.onTranscript({
           role: 'USER',
@@ -294,8 +311,18 @@ Respond using voice.
       if (
         serverContent.inputTranscription.finished
       ) {
+        const geminiEot = Date.now();
+        if (this.currentTurn) {
+          this.currentTurn.geminiEndOfTurnTime = geminiEot;
+          this.currentTurn.userText = this.userTranscriptBuffer;
+        }
+
+        const vadLatency = this.currentTurn?.lastInputAudioTime
+          ? geminiEot - this.currentTurn.lastInputAudioTime
+          : 0;
+
         console.log(
-          `[Latency] TURN_COMPLETE: user finished speaking -> "${this.userTranscriptBuffer}"`
+          `[Latency] TURN #${this.turnIndex} END_OF_TURN: VAD committed in ${vadLatency}ms -> "${this.userTranscriptBuffer}"`
         );
 
         if (this.userTranscriptBuffer) {
@@ -340,12 +367,36 @@ Respond using voice.
           this.outputAudioBytes +=
             approximateBytes;
 
-          if (this.isAwaitingTurnResponse) {
-            this.isAwaitingTurnResponse = false;
-            const now = Date.now();
-            const elapsed = this.lastInputAudioTime ? (now - this.lastInputAudioTime) : 0;
+          const now = Date.now();
+
+          // Turn latency measurement for first response chunk
+          if (this.currentTurn && !this.currentTurn.firstGeminiAudioTime) {
+            this.currentTurn.firstGeminiAudioTime = now;
+            const speechEndTime = this.currentTurn.lastInputAudioTime || this.lastInputAudioTime || now;
+            const eotTime = this.currentTurn.geminiEndOfTurnTime || speechEndTime;
+
+            const vadLatencyMs = Math.max(0, eotTime - speechEndTime);
+            const genLatencyMs = Math.max(0, now - eotTime);
+            const totalTurnaroundMs = Math.max(0, now - speechEndTime);
+
+            this.currentTurn.vadLatencyMs = vadLatencyMs;
+            this.currentTurn.genLatencyMs = genLatencyMs;
+            this.currentTurn.totalTurnaroundMs = totalTurnaroundMs;
+
+            this.turnMetrics.push({
+              turnIndex: this.turnIndex,
+              userText: this.currentTurn.userText,
+              speechEndTime,
+              geminiEndOfTurnTime: eotTime,
+              firstGeminiAudioTime: now,
+              vadLatencyMs,
+              genLatencyMs,
+              totalTurnaroundMs,
+              interrupted: false,
+            });
+
             console.log(
-              `[Latency] FIRST_GEMINI_AUDIO -> chunk #1 generated in ${elapsed}ms from last input audio (bytes: ${approximateBytes})`
+              `[TurnLatency] TURN #${this.turnIndex} LATENCY BREAKDOWN: speechEnd->GeminiEndOfTurn (VAD): ${vadLatencyMs}ms | GeminiEndOfTurn->firstAudio (Gen): ${genLatencyMs}ms | speechEnd->firstPlayback: ${totalTurnaroundMs}ms (bytes: ${approximateBytes})`
             );
           }
 
@@ -358,6 +409,7 @@ Respond using voice.
             );
           }
 
+          // Forward chunk immediately with zero buffering
           this.onAudioChunk(audioData);
         }
 
@@ -411,9 +463,13 @@ Respond using voice.
 
     if (serverContent.turnComplete) {
       console.log(
-        '[GeminiLive] ASSISTANT TURN COMPLETE'
+        `[GeminiLive] ASSISTANT TURN #${this.turnIndex} COMPLETE`
       );
       this.isAwaitingTurnResponse = true;
+
+      if (this.currentTurn) {
+        this.currentTurn.assistantText = this.assistantTranscriptBuffer;
+      }
 
       if (this.assistantTranscriptBuffer) {
         this.onTranscript({
@@ -459,9 +515,28 @@ Respond using voice.
       return;
     }
 
+    const now = Date.now();
     this.inputAudioChunkCount++;
-    this.lastInputAudioTime = Date.now();
-    this.isAwaitingTurnResponse = true;
+
+    if (this.isAwaitingTurnResponse) {
+      this.isAwaitingTurnResponse = false;
+      this.turnIndex++;
+      this.currentTurn = {
+        turnIndex: this.turnIndex,
+        speechStartTime: now,
+        lastInputAudioTime: now,
+        geminiEndOfTurnTime: 0,
+        firstGeminiAudioTime: 0,
+        userText: '',
+        assistantText: '',
+        interrupted: false,
+      };
+    }
+
+    this.lastInputAudioTime = now;
+    if (this.currentTurn) {
+      this.currentTurn.lastInputAudioTime = now;
+    }
 
     const approximateBytes =
       Math.floor(
@@ -476,7 +551,7 @@ Respond using voice.
       this.inputAudioChunkCount % 50 === 0
     ) {
       console.log(
-        `[GeminiLive] INPUT AUDIO #${this.inputAudioChunkCount} -> base64: ${base64AudioChunk.length}, bytes: ${approximateBytes}`
+        `[GeminiLive] INPUT AUDIO #${this.inputAudioChunkCount} -> base64: ${base64AudioChunk.length}, bytes: ${approximateBytes} (Turn #${this.turnIndex})`
       );
     }
 
@@ -633,6 +708,78 @@ Respond using voice.
     console.log(
       '[GeminiLive] Gemini Live session cleanup complete'
     );
+  }
+
+  /**
+   * Get all recorded turn latency metrics
+   */
+  getTurnMetrics() {
+    return [...this.turnMetrics];
+  }
+
+  /**
+   * Calculate summary latency statistics (avg, median, P90)
+   */
+  getSummaryStats() {
+    if (this.turnMetrics.length === 0) {
+      return {
+        totalTurns: 0,
+        averageTurnaroundMs: 0,
+        medianTurnaroundMs: 0,
+        p90TurnaroundMs: 0,
+        averageVadMs: 0,
+        averageGenMs: 0,
+        interruptedTurns: 0,
+      };
+    }
+
+    const turnarounds = this.turnMetrics
+      .map((t) => t.totalTurnaroundMs)
+      .filter((v) => typeof v === 'number' && !isNaN(v))
+      .sort((a, b) => a - b);
+
+    const vads = this.turnMetrics
+      .map((t) => t.vadLatencyMs)
+      .filter((v) => typeof v === 'number' && !isNaN(v));
+
+    const gens = this.turnMetrics
+      .map((t) => t.genLatencyMs)
+      .filter((v) => typeof v === 'number' && !isNaN(v));
+
+    const sum = turnarounds.reduce((a, b) => a + b, 0);
+    const avg = Math.round(sum / (turnarounds.length || 1));
+
+    const mid = Math.floor(turnarounds.length / 2);
+    const median = turnarounds.length % 2 !== 0
+      ? turnarounds[mid]
+      : Math.round((turnarounds[mid - 1] + turnarounds[mid]) / 2);
+
+    const p90Index = Math.min(
+      turnarounds.length - 1,
+      Math.floor(turnarounds.length * 0.9)
+    );
+    const p90 = turnarounds[p90Index] || 0;
+
+    const avgVad = Math.round(
+      vads.reduce((a, b) => a + b, 0) / (vads.length || 1)
+    );
+    const avgGen = Math.round(
+      gens.reduce((a, b) => a + b, 0) / (gens.length || 1)
+    );
+
+    const interruptedCount = this.turnMetrics.filter((t) => t.interrupted).length;
+
+    return {
+      totalTurns: this.turnMetrics.length,
+      averageTurnaroundMs: avg,
+      medianTurnaroundMs: median,
+      p90TurnaroundMs: p90,
+      averageVadMs: avgVad,
+      averageGenMs: avgGen,
+      interruptedTurns: interruptedCount,
+      minTurnaroundMs: turnarounds[0] || 0,
+      maxTurnaroundMs: turnarounds[turnarounds.length - 1] || 0,
+    };
   }
 }
 

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node test/api.test.js && node test/firestore_personal_assistant.test.js"
+    "test": "node test/api.test.js && node test/firestore_personal_assistant.test.js && node test/test_maya_phone_call.js",
+    "test:phone": "node test/test_maya_phone_call.js"
   },
   "keywords": [
     "fellowgrad",
