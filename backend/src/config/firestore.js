@@ -220,6 +220,15 @@ function createInMemoryFirestore() {
       set: (ref, data, opts) => ref.set(data, opts),
       commit: async () => true,
     }),
+    runTransaction: async (updateFunction) => {
+      const transaction = {
+        get: async (ref) => ref.get(),
+        set: (ref, data, opts) => ref.set(data, opts),
+        update: (ref, data) => ref.update(data),
+        delete: (ref) => ref.delete(),
+      };
+      return await updateFunction(transaction);
+    },
     _store: store,
   };
 }

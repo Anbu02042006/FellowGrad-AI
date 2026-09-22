@@ -24,13 +24,16 @@ router.post('/', flexibleAuth, conversationController.createConversation);
 // Get conversations for current user
 router.get('/', authMiddleware, conversationController.getConversations);
 
+// Clear all conversations for authenticated user
+router.delete('/', authMiddleware, conversationController.clearAllConversations);
+
 // Legacy support: Get conversations by userId
 router.get('/user/:userId', flexibleAuth, conversationController.getConversationsByUser);
 
 // Get specific conversation
 router.get('/:conversationId', flexibleAuth, conversationController.getConversation);
 
-// Delete conversation
+// Delete single conversation
 router.delete('/:conversationId', flexibleAuth, conversationController.deleteConversation);
 
 // Send message to conversation

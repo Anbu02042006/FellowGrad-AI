@@ -36,7 +36,22 @@ router.post('/', authMiddleware, async (req, res, next) => {
   }
 });
 
-// Delete memory
+// Clear all memories for authenticated user
+router.delete('/', authMiddleware, async (req, res, next) => {
+  try {
+    const userId = req.user.userId || req.user.id;
+    const count = await MemoryService.clearAllMemories(userId);
+    return res.status(200).json({
+      success: true,
+      message: 'All memories cleared successfully',
+      deletedCount: count,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete specific memory
 router.delete('/:memoryId', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user.userId || req.user.id;

@@ -38,9 +38,18 @@ const createLiveSession = async (req, res, next) => {
     }
 
     const requestedVoice = req.body?.voice || req.query?.voice;
+    let fallbackVoice = geminiLiveConfig.DEFAULT_VOICE;
+    try {
+      const User = require('../models/User');
+      const user = await User.findById(userId);
+      if (user?.preferences?.voice && geminiLiveConfig.ALLOWED_VOICES.includes(user.preferences.voice)) {
+        fallbackVoice = user.preferences.voice;
+      }
+    } catch (_) {}
+
     const voice = (requestedVoice && geminiLiveConfig.ALLOWED_VOICES.includes(requestedVoice))
       ? requestedVoice
-      : geminiLiveConfig.DEFAULT_VOICE;
+      : fallbackVoice;
 
     const sessionId = uuidv4();
 

@@ -1,0 +1,170 @@
+.container {
+  flex: 1;
+  background-color: #070913;
+  position: relative;
+}
+
+.glowTop {
+  position: absolute;
+  top: -80px;
+  right: -50px;
+  width: 260px;
+  height: 260px;
+  border-radius: 130px;
+  background-color: rgba(108, 99, 255, 0.12);
+}
+
+.glowBottom {
+  position: absolute;
+  bottom: -60px;
+  left: -50px;
+  width: 240px;
+  height: 240px;
+  border-radius: 120px;
+  background-color: rgba(77, 171, 247, 0.08);
+}
+
+.content {
+  flex: 1;
+  padding: 36px 28px 24px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brandContainer {
+  align-items: center;
+  margin-top: 16px;
+}
+
+.brandTitle {
+  font-size: 32px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
+.tagline {
+  font-size: 15px;
+  font-weight: 500;
+  color: #9EABCA;
+  margin-top: 8px;
+  text-align: center;
+  line-height: 22px;
+}
+
+.orbContainer {
+  align-items: center;
+  justify-content: center;
+  margin-vertical: 24px;
+}
+
+.orbOuterRing {
+  width: 170px;
+  height: 170px;
+  border-radius: 85px;
+  background-color: rgba(108, 99, 255, 0.08);
+  border-width: 1px;
+  border-color: rgba(108, 99, 255, 0.25);
+  justify-content: center;
+  align-items: center;
+}
+
+.orbMiddleRing {
+  width: 130px;
+  height: 130px;
+  border-radius: 65px;
+  background-color: rgba(108, 99, 255, 0.18);
+  border-width: 1px;
+  border-color: rgba(127, 90, 240, 0.45);
+  justify-content: center;
+  align-items: center;
+}
+
+.orbCore {
+  width: 90px;
+  height: 90px;
+  border-radius: 45px;
+  background-color: #6C63FF;
+  justify-content: center;
+  align-items: center;
+  elevation: 8;
+  shadow-color: #6C63FF;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.5;
+  shadow-radius: 12px;
+}
+
+.mayaAvatarText {
+  font-size: 32px;
+}
+
+.companionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7986AC;
+  margin-top: 14px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.descriptionContainer {
+  padding-horizontal: 10px;
+}
+
+.descriptionText {
+  font-size: 14px;
+  line-height: 22px;
+  color: #8C99B8;
+  text-align: center;
+}
+
+.actionsContainer {
+  width: 100%;
+  gap: 12px;
+}
+
+.primaryButton {
+  width: 100%;
+  background-color: #6C63FF;
+  height: 52px;
+  border-radius: 16px;
+  justify-content: center;
+  align-items: center;
+  elevation: 4;
+  shadow-color: #6C63FF;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.35;
+  shadow-radius: 8px;
+}
+
+.primaryButtonText {
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.secondaryButton {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.12);
+  height: 52px;
+  border-radius: 16px;
+  justify-content: center;
+  align-items: center;
+}
+
+.secondaryButtonText {
+  color: #E2E8F0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.privacyNote {
+  font-size: 11px;
+  color: #586584;
+  text-align: center;
+  margin-top: 6px;
+}

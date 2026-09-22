@@ -1,125 +1,246 @@
-$background: #0A0E21;
-$surface: #1D1D35;
-$text: #FFFFFF;
-$textSecondary: #A0A0B0;
-$border: #2A2E45;
-$success: #4CAF50;
-
 .container {
   flex: 1;
-  background-color: $background;
+  background-color: #070913;
 }
 
 .header {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-horizontal: 16px;
-  height: 56px;
+  padding-horizontal: 20px;
+  padding-vertical: 14px;
+  border-bottom-width: 1px;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .backButton {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: $surface;
-  justify-content: center;
-  align-items: center;
+  padding: 8px;
 }
 
 .backIcon {
-  color: $text;
+  color: #9EABCA;
   font-size: 18px;
 }
 
 .headerTitle {
-  font-size: 20px;
-  font-weight: 600;
-  color: $text;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
 }
 
 .content {
   flex: 1;
+  padding: 16px 20px 40px;
 }
 
-.profileSection {
+.accountCard {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
-  background-color: $surface;
-  margin-vertical: 16px;
-  border-radius: 12px;
-  margin-horizontal: 16px;
+  background-color: #101426;
+  border-radius: 18px;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.08);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.accountCardLeft {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatarCircle {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: #6C63FF;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatarInitial {
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
 }
 
 .profileName {
-  font-size: 20px;
-  font-weight: 600;
-  color: $text;
-  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
 }
 
 .profileEmail {
-  font-size: 14px;
-  color: $textSecondary;
-}
-
-.section {
-  margin-bottom: 32px;
-}
-
-.sectionTitle {
-  font-size: 14px;
-  color: $textSecondary;
-  margin-left: 24px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.item {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding-vertical: 16px;
-  padding-horizontal: 24px;
-}
-
-.itemLeft {
-  flex-direction: row;
-  align-items: center;
-}
-
-.itemIcon {
-  font-size: 20px;
-  margin-right: 16px;
-  width: 30px;
-  text-align: center;
-}
-
-.itemLabel {
-  font-size: 16px;
-  color: $text;
+  font-size: 13px;
+  color: #8C99B8;
+  margin-top: 2px;
 }
 
 .arrow {
-  color: $border;
-  font-size: 16px;
+  color: #5C6682;
+  font-size: 15px;
 }
 
-.versionInfo {
+.section {
+  background-color: #101426;
+  border-radius: 18px;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.06);
+  padding: 18px;
+  margin-bottom: 18px;
+  gap: 16px;
+}
+
+.sectionHeader {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7986AC;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.settingRow {
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  padding-vertical: 32px;
+  padding-vertical: 4px;
+}
+
+.switchRow {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-vertical: 4px;
+}
+
+.settingLabelGroup {
+  flex: 1;
+  margin-right: 16px;
+}
+
+.settingTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.settingSubtitle {
+  font-size: 12px;
+  line-height: 17px;
+  color: #8C99B8;
+  margin-top: 3px;
+}
+
+.rowRight {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.valueText {
+  color: #BAC7E5;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.valueBadge {
+  background-color: #181E38;
+  padding-horizontal: 10px;
+  padding-vertical: 4px;
+  border-radius: 8px;
+  color: #BAC7E5;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.infoRow {
+  padding-vertical: 4px;
+}
+
+.infoTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.infoSubtitle {
+  font-size: 12px;
+  line-height: 17px;
+  color: #8C99B8;
+  margin-top: 4px;
+}
+
+.actionRow {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-vertical: 6px;
+  border-top-width: 1px;
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.actionRowTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #F87171;
+}
+
+.versionRow {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top-width: 1px;
+  border-top-color: rgba(255, 255, 255, 0.05);
 }
 
 .versionLabel {
-  font-size: 16px;
-  color: $textSecondary;
+  font-size: 13px;
+  color: #8C99B8;
 }
 
-.versionNumber {
-  font-size: 14px;
-  color: $textSecondary;
-  margin-top: 4px;
+.versionValue {
+  font-size: 13px;
+  color: #5C6682;
+  font-weight: 600;
+}
+
+.actionsSection {
+  margin-top: 6px;
+  gap: 12px;
+  padding-bottom: 30px;
+}
+
+.signOutButton {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.1);
+  height: 50px;
+  border-radius: 14px;
+  justify-content: center;
+  align-items: center;
+}
+
+.signOutText {
+  color: #E2E8F0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.deleteButton {
+  background-color: rgba(239, 68, 68, 0.08);
+  border-width: 1px;
+  border-color: rgba(239, 68, 68, 0.22);
+  height: 50px;
+  border-radius: 14px;
+  justify-content: center;
+  align-items: center;
+}
+
+.deleteButtonText {
+  color: #F87171;
+  font-size: 15px;
+  font-weight: 600;
 }

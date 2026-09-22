@@ -20,9 +20,20 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    // Find user by email (stored in subject/email in JWT)
-    const email = decoded.sub || decoded.email;
-    const user = await User.findByEmail(email);
+
+    // Find user by ID or email
+    let user = null;
+    const candidateId = decoded.userId || decoded.sub;
+    if (candidateId && !candidateId.includes('@')) {
+      user = await User.findById(candidateId);
+    }
+
+    if (!user) {
+      const candidateEmail = decoded.email || (decoded.sub && decoded.sub.includes('@') ? decoded.sub : null);
+      if (candidateEmail) {
+        user = await User.findByEmail(candidateEmail);
+      }
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -34,8 +45,12 @@ const authMiddleware = async (req, res, next) => {
     req.user = {
       id: user.id,
       userId: user.id,
-      name: user.name,
+      name: user.fullName || user.name,
+      fullName: user.fullName || user.name,
       email: user.email,
+      preferences: user.preferences,
+      academicProfile: user.academicProfile,
+      sessionId: decoded.sessionId || null,
     };
 
     next();

@@ -1,70 +1,172 @@
-$background: #0A0E21;
-$surface: #1D1D35;
-$primary: #6C63FF;
-$text: #FFFFFF;
-$textSecondary: #A0A0B0;
-$inputBackground: #161B33;
-
 .container {
   flex: 1;
-  background-color: $background;
+  background-color: #070913;
 }
 
-.content {
+.keyboardView {
   flex: 1;
-  padding: 24px;
+}
+
+.scrollContent {
+  flex-grow: 1;
+  padding: 24px 24px 36px;
   justify-content: center;
+}
+
+.backButton {
+  flex-direction: row;
+  align-items: center;
+  align-self: flex-start;
+  padding-vertical: 8px;
+  padding-horizontal: 4px;
+  margin-bottom: 24px;
+}
+
+.backIcon {
+  color: #9EABCA;
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.backLabel {
+  color: #9EABCA;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.header {
+  margin-bottom: 28px;
 }
 
 .title {
   font-size: 28px;
-  font-weight: bold;
-  color: $text;
-  margin-bottom: 8px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  font-size: 16px;
-  color: $textSecondary;
-  margin-bottom: 48px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #8C99B8;
+  margin-top: 8px;
 }
 
-.form {
-  gap: 16px;
+.errorBox {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-width: 1px;
+  border-color: rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.errorText {
+  color: #F87171;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.formCard {
+  background-color: #101426;
+  border-radius: 20px;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.08);
+  padding: 20px;
+  gap: 18px;
+}
+
+.inputGroup {
+  gap: 8px;
+}
+
+.inputLabel {
+  color: #BAC7E5;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.passwordLabelRow {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgotText {
+  color: #8B85FF;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .input {
-  background-color: $inputBackground;
-  border-radius: 12px;
-  height: 56px;
-  padding-horizontal: 16px;
-  color: $text;
-  font-size: 16px;
+  background-color: #181E38;
   border-width: 1px;
-  border-color: #2A2E45;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #FFFFFF;
+  font-size: 15px;
 }
 
-.button {
-  background-color: $primary;
-  height: 56px;
-  border-radius: 28px;
+.passwordInputWrapper {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 48px;
+}
+
+.eyeToggle {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  padding: 4px;
+}
+
+.eyeIcon {
+  font-size: 16px;
+}
+
+.submitButton {
+  background-color: #6C63FF;
+  height: 52px;
+  border-radius: 14px;
   justify-content: center;
   align-items: center;
-  margin-top: 24px;
+  margin-top: 8px;
+  elevation: 4;
+  shadow-color: #6C63FF;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.35;
+  shadow-radius: 8px;
 }
 
-.buttonText {
-  color: $text;
-  font-size: 18px;
-  font-weight: bold;
+.buttonDisabled {
+  opacity: 0.65;
 }
 
-.link {
+.submitButtonText {
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.footerRow {
+  flex-direction: row;
+  justify-content: center;
   align-items: center;
-  margin-top: 24px;
+  margin-top: 32px;
 }
 
-.linkText {
-  color: $primary;
+.footerText {
+  color: #8C99B8;
   font-size: 14px;
+}
+
+.footerLink {
+  color: #8B85FF;
+  font-size: 14px;
+  font-weight: 700;
 }

@@ -1,134 +1,308 @@
-$background: #0A0E21;
-$surface: #1D1D35;
-$text: #FFFFFF;
-$textSecondary: #A0A0B0;
-$border: #2A2E45;
-$error: #FF4C4C;
-$success: #4CAF50;
-
 .container {
   flex: 1;
-  background-color: $background;
+  background-color: #070913;
+}
+
+.loadingContainer {
+  flex: 1;
+  background-color: #070913;
+  justify-content: center;
+  align-items: center;
 }
 
 .header {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-horizontal: 16px;
-  height: 56px;
+  padding-horizontal: 20px;
+  padding-vertical: 14px;
+  border-bottom-width: 1px;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .backButton {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: $surface;
-  justify-content: center;
-  align-items: center;
+  padding: 8px;
 }
 
 .backIcon {
-  color: $text;
+  color: #9EABCA;
   font-size: 18px;
 }
 
 .headerTitle {
-  font-size: 20px;
-  font-weight: 600;
-  color: $text;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.saveHeaderButton {
+  color: #8B85FF;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px;
 }
 
 .content {
   flex: 1;
-  padding-horizontal: 24px;
+  padding: 16px 20px 40px;
 }
 
-.profileSection {
-  margin-top: 32px;
-  margin-bottom: 48px;
+.avatarHero {
+  align-items: center;
+  margin-vertical: 16px;
 }
 
-.profileName {
-  font-size: 24px;
-  font-weight: bold;
-  color: $text;
-  margin-bottom: 4px;
+.avatarCircle {
+  width: 76px;
+  height: 76px;
+  border-radius: 38px;
+  background-color: #6C63FF;
+  justify-content: center;
+  align-items: center;
+  elevation: 6;
+  shadow-color: #6C63FF;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.4;
+  shadow-radius: 8px;
 }
 
-.profileEmail {
-  font-size: 16px;
-  color: $textSecondary;
+.avatarInitial {
+  font-size: 30px;
+  font-weight: 800;
+  color: #FFFFFF;
 }
 
-.settingRow {
+.heroName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-top: 10px;
+}
+
+.heroEmail {
+  font-size: 13px;
+  color: #8C99B8;
+  margin-top: 3px;
+}
+
+.sectionCard {
+  background-color: #101426;
+  border-radius: 18px;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.07);
+  padding: 18px;
+  margin-bottom: 18px;
+  gap: 14px;
+}
+
+.sectionHeader {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7986AC;
+  letter-spacing: 0.8px;
+}
+
+.sectionDescription {
+  font-size: 12px;
+  line-height: 17px;
+  color: #8C99B8;
+  margin-top: -6px;
+}
+
+.inputGroup {
+  gap: 6px;
+}
+
+.inputLabel {
+  color: #BAC7E5;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.input {
+  background-color: #181E38;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+
+.inputReadOnly {
+  background-color: #12162B;
+  color: #8C99B8;
+}
+
+.fieldNote {
+  font-size: 11px;
+  color: #5C6682;
+  margin-top: 2px;
+}
+
+.menuRow {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  margin-top: 32px;
+  padding-vertical: 8px;
 }
 
-.label {
-  font-size: 16px;
-  font-weight: 600;
-  color: $text;
-  flex: 1;
-}
-
-.nicknameButton {
+.menuRowLeft {
   flex-direction: row;
   align-items: center;
+  gap: 12px;
 }
 
-.nicknameText {
-  font-size: 16px;
-  color: $text;
-  margin-right: 8px;
+.menuIcon {
+  font-size: 18px;
+}
+
+.menuTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
 }
 
 .arrow {
-  color: $border;
-  font-size: 16px;
+  color: #5C6682;
+  font-size: 15px;
 }
 
-.helpText {
-  font-size: 14px;
-  color: $textSecondary;
-  margin-top: 8px;
-  line-height: 20px;
+.actionsSection {
+  margin-top: 10px;
+  gap: 12px;
+  padding-bottom: 30px;
 }
 
-.buttonContainer {
-  margin-top: 48px;
-  padding-bottom: 48px;
+.saveActionButton {
+  background-color: #6C63FF;
+  height: 50px;
+  border-radius: 14px;
+  justify-content: center;
+  align-items: center;
+}
+
+.saveActionText {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .signOutButton {
+  background-color: rgba(255, 255, 255, 0.06);
   border-width: 1px;
-  border-color: $border;
-  border-radius: 25px;
+  border-color: rgba(255, 255, 255, 0.1);
   height: 50px;
+  border-radius: 14px;
   justify-content: center;
   align-items: center;
-  margin-bottom: 16px;
 }
 
 .signOutText {
-  font-size: 16px;
-  font-weight: bold;
-  color: $text;
+  color: #E2E8F0;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.deleteButton {
-  background-color: rgba(255, 76, 76, 0.1);
-  border-radius: 25px;
+.deleteAccountButton {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-width: 1px;
+  border-color: rgba(239, 68, 68, 0.25);
   height: 50px;
+  border-radius: 14px;
   justify-content: center;
   align-items: center;
 }
 
-.deleteText {
-  font-size: 16px;
-  color: $error;
-  font-weight: bold;
+.deleteAccountText {
+  color: #F87171;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+// Modal Styles
+.modalOverlay {
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.75);
+  justify-content: flex-end;
+}
+
+.modalContent {
+  background-color: #101426;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-top-width: 1px;
+  border-top-color: rgba(255, 255, 255, 0.12);
+  padding: 24px 20px 36px;
+  gap: 16px;
+}
+
+.modalHeader {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.modalCloseText {
+  color: #8C99B8;
+  font-size: 18px;
+  padding: 4px;
+}
+
+.modalErrorBox {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.modalErrorText {
+  color: #F87171;
+  font-size: 13px;
+}
+
+.modalInputGroup {
+  gap: 6px;
+}
+
+.modalActions {
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.modalCancelButton {
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.08);
+  height: 48px;
+  border-radius: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalCancelText {
+  color: #BAC7E5;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.modalSubmitButton {
+  flex: 2;
+  background-color: #6C63FF;
+  height: 48px;
+  border-radius: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalSubmitText {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
 }

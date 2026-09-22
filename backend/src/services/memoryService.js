@@ -44,9 +44,31 @@ class MemoryService {
    * @param {string} memoryData.content
    * @param {number} [memoryData.importance]
    * @param {string} [memoryData.sourceConversationId]
+  /**
+   * Check if long-term memory is enabled for a user
    */
+  static async isMemoryEnabled(userId) {
+    if (!userId) return true;
+    try {
+      const User = require('../models/User');
+      const user = await User.findById(userId);
+      if (user && user.preferences && user.preferences.memoryEnabled === false) {
+        return false;
+      }
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
   static async saveMemory(userId, { category, content, importance = 0.8, sourceConversationId = null }) {
     if (!userId || !content || !content.trim()) return null;
+
+    const enabled = await this.isMemoryEnabled(userId);
+    if (!enabled) {
+      console.log(`[MemoryService] Memory save skipped: memoryEnabled is false for user ${userId}`);
+      return null;
+    }
 
     const db = getFirestore();
     const cleanCategory = VALID_CATEGORIES.includes(category) ? category : 'personal_context';
@@ -201,6 +223,28 @@ class MemoryService {
   }
 
   /**
+   * Clear all memories for a user
+   * @param {string} userId
+   */
+  static async clearAllMemories(userId) {
+    if (!userId) return 0;
+    const db = getFirestore();
+    try {
+      const memories = await this.getMemories(userId);
+      let count = 0;
+      for (const mem of memories) {
+        await db.doc(`users/${userId}/memories/${mem.id}`).delete();
+        count++;
+      }
+      console.log(`[MemoryService] Cleared ${count} memories for user: ${userId}`);
+      return count;
+    } catch (err) {
+      console.error(`[MemoryService] Error clearing memories for ${userId}:`, err.message);
+      return 0;
+    }
+  }
+
+  /**
    * Retrieve relevant memories based on conversation context or query
    * @param {string} userId
    * @param {string} [contextQuery]
@@ -248,6 +292,11 @@ class MemoryService {
     // Run completely in background
     setImmediate(async () => {
       try {
+        const enabled = await this.isMemoryEnabled(userId);
+        if (!enabled) {
+          return;
+        }
+
         // 1. Fetch recent messages
         const recentMsgs = await ConversationService.getRecentMessages(userId, conversationId, 4);
         if (!recentMsgs || recentMsgs.length < 2) return;
@@ -378,18 +427,37 @@ ${dialogueText}
     try {
       console.log(`[MemoryService] Loading user context for userId: ${userId}`);
 
-      // 1. Fetch user profile
+      // Check if memory is enabled for this user
+      const memoryEnabled = await this.isMemoryEnabled(userId);
+
+      // 1. Fetch user profile (modern User model first, fallback to legacy UserProfile)
       let profile = null;
       try {
-        profile = await UserProfile.findByUserId(userId);
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        if (user) {
+          profile = {
+            name: user.fullName || user.name,
+            college: user.academicProfile?.college || null,
+            course: user.academicProfile?.course || null,
+            educationLevel: user.academicProfile?.year || null,
+            interests: user.academicProfile?.interests?.length ? user.academicProfile.interests.join(', ') : null,
+            careerGoals: user.academicProfile?.goals?.length ? user.academicProfile.goals.join(', ') : null,
+          };
+        }
+        if (!profile || !profile.name) {
+          profile = await UserProfile.findByUserId(userId);
+        }
       } catch (_) {}
 
-      // 2. Fetch relevant long-term memories
+      // 2. Fetch relevant long-term memories (only if memory is enabled)
       let memories = [];
-      try {
-        memories = await this.getRelevantMemories(userId, null, 6);
-      } catch (memErr) {
-        console.warn(`[MemoryService] Note loading memories: ${memErr.message}`);
+      if (memoryEnabled) {
+        try {
+          memories = await this.getRelevantMemories(userId, null, 6);
+        } catch (memErr) {
+          console.warn(`[MemoryService] Note loading memories: ${memErr.message}`);
+        }
       }
 
       // 3. Fetch recent conversation messages if conversationId is provided
@@ -402,29 +470,31 @@ ${dialogueText}
         }
       }
 
-      // 3b. Fetch brief summaries of past conversations for historical continuity
+      // 3b. Fetch brief summaries of past conversations for historical continuity (only if memory is enabled)
       let pastConversationSummaries = [];
-      try {
-        const allConvs = await ConversationService.getConversationsByUser(userId, 6);
-        const pastConvs = allConvs.filter((c) => c.id !== conversationId && c.lastMessage);
-        for (const pastConv of pastConvs.slice(0, 4)) {
-          const dateVal = pastConv.updatedAt || pastConv.createdAt;
-          let dateStr = 'Earlier';
-          if (dateVal) {
-            try {
-              const d = new Date(dateVal);
-              const now = new Date();
-              const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
-              if (diffDays === 0) dateStr = 'Today';
-              else if (diffDays === 1) dateStr = 'Yesterday';
-              else if (diffDays === 2) dateStr = '2 days ago';
-              else dateStr = `${diffDays} days ago`;
-            } catch (_) {}
+      if (memoryEnabled) {
+        try {
+          const allConvs = await ConversationService.getConversationsByUser(userId, 6);
+          const pastConvs = allConvs.filter((c) => c.id !== conversationId && c.lastMessage);
+          for (const pastConv of pastConvs.slice(0, 4)) {
+            const dateVal = pastConv.updatedAt || pastConv.createdAt;
+            let dateStr = 'Earlier';
+            if (dateVal) {
+              try {
+                const d = new Date(dateVal);
+                const now = new Date();
+                const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+                if (diffDays === 0) dateStr = 'Today';
+                else if (diffDays === 1) dateStr = 'Yesterday';
+                else if (diffDays === 2) dateStr = '2 days ago';
+                else dateStr = `${diffDays} days ago`;
+              } catch (_) {}
+            }
+            pastConversationSummaries.push(`• [${dateStr}] Discussion on "${pastConv.title || 'General'}": ${pastConv.lastMessage}`);
           }
-          pastConversationSummaries.push(`• [${dateStr}] Discussion on "${pastConv.title || 'General'}": ${pastConv.lastMessage}`);
+        } catch (convErr) {
+          console.warn(`[MemoryService] Note loading past conversation summaries: ${convErr.message}`);
         }
-      } catch (convErr) {
-        console.warn(`[MemoryService] Note loading past conversation summaries: ${convErr.message}`);
       }
 
       // 4. Build compact context text for Gemini Live

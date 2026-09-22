@@ -90,6 +90,33 @@ const deleteConversation = async (req, res, next) => {
 };
 
 /**
+ * DELETE /api/conversations (clear all conversations for authenticated user)
+ */
+const clearAllConversations = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User not identified' });
+    }
+
+    const conversations = await ConversationService.getConversationsByUser(userId);
+    let deletedCount = 0;
+    for (const conv of conversations) {
+      await ConversationService.deleteConversation(userId, conv.id);
+      deletedCount++;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'All conversations cleared successfully',
+      deletedCount,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * POST /api/conversations/:conversationId/messages
  */
 const sendMessage = async (req, res, next) => {
@@ -148,6 +175,7 @@ module.exports = {
   getConversationsByUser: getConversations,
   getConversation,
   deleteConversation,
+  clearAllConversations,
   sendMessage,
   getMessages,
   getRecentMessages,
