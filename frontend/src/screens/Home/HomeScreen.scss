@@ -1,11 +1,12 @@
-$background: #0A0E21;
-$surface: #14172B;
-$surfaceElevated: #1D213E;
+$background: #070913;
+$surface: #111425;
+$surfaceElevated: #181C33;
 $primary: #6C63FF;
 $primaryLight: #8E59FF;
 $text: #FFFFFF;
-$textSecondary: #98A2B3;
-$border: #232847;
+$textSecondary: #8D93A5;
+$border: #1E233D;
+$borderGlow: rgba(108, 99, 255, 0.35);
 $success: #12B76A;
 $error: #F04438;
 $incognitoPurple: #9E77ED;
@@ -41,8 +42,13 @@ $incognitoPurple: #9E77ED;
   background-color: #2D63FF;
   justify-content: center;
   align-items: center;
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-width: 1.5px;
+  border-color: rgba(255, 255, 255, 0.22);
+  shadow-color: #2D63FF;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.4;
+  shadow-radius: 6px;
+  elevation: 4;
 }
 
 .avatarInitial {
@@ -61,13 +67,14 @@ $incognitoPurple: #9E77ED;
   font-size: 17px;
   font-weight: 700;
   color: $text;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
 }
 
 .greetingSubtitle {
   font-size: 12px;
   color: $textSecondary;
   margin-top: 2px;
+  font-weight: 500;
 }
 
 .incognitoButton {
@@ -77,13 +84,18 @@ $incognitoPurple: #9E77ED;
   background-color: $surface;
   justify-content: center;
   align-items: center;
-  border-width: 1px;
+  border-width: 1.5px;
   border-color: $border;
 }
 
 .incognitoButtonActive {
-  background-color: rgba(158, 119, 237, 0.2);
+  background-color: rgba(158, 119, 237, 0.18);
   border-color: $incognitoPurple;
+  shadow-color: $incognitoPurple;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.5;
+  shadow-radius: 8px;
+  elevation: 6;
 }
 
 .incognitoIcon {
@@ -94,21 +106,21 @@ $incognitoPurple: #9E77ED;
 // NOTICE BANNER
 // --------------------------------------------------
 .noticeBanner {
-  margin-horizontal: 20px;
-  margin-top: 8px;
+  margin-horizontal: 24px;
+  margin-top: 6px;
   padding-vertical: 10px;
   padding-horizontal: 16px;
-  border-radius: 12px;
-  background-color: rgba(158, 119, 237, 0.15);
+  border-radius: 14px;
+  background-color: rgba(158, 119, 237, 0.14);
   border-width: 1px;
-  border-color: rgba(158, 119, 237, 0.4);
+  border-color: rgba(158, 119, 237, 0.35);
   align-items: center;
 }
 
 .noticeText {
   color: #E9D7FE;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   text-align: center;
 }
 
@@ -122,7 +134,7 @@ $incognitoPurple: #9E77ED;
 }
 
 .orbWrapper {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .statusContainer {
@@ -130,18 +142,18 @@ $incognitoPurple: #9E77ED;
 }
 
 .agentName {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   color: $text;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
   margin-bottom: 6px;
 }
 
 .statusText {
   font-size: 15px;
   color: $textSecondary;
-  font-weight: 500;
-  letter-spacing: 0.1px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .timerBadge {
@@ -168,14 +180,15 @@ $incognitoPurple: #9E77ED;
   color: $text;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 // --------------------------------------------------
-// BOTTOM ACTION BAR
+// BOTTOM ACTION BAR (FLOATING DOCK)
 // --------------------------------------------------
 .bottomBar {
   padding-horizontal: 24px;
-  padding-bottom: 36px;
+  padding-bottom: 38px;
   align-items: center;
 }
 
@@ -190,49 +203,64 @@ $incognitoPurple: #9E77ED;
 .voiceSelectorPill {
   flex-direction: row;
   align-items: center;
-  background-color: $surface;
+  background-color: $surfaceElevated;
   padding-horizontal: 14px;
-  padding-vertical: 10px;
+  padding-vertical: 11px;
   border-radius: 24px;
-  border-width: 1px;
+  border-width: 1.5px;
   border-color: $border;
-  min-width: 95px;
+  min-width: 96px;
   justify-content: center;
 }
 
 .voiceIcon {
-  font-size: 14px;
+  font-size: 15px;
   margin-right: 6px;
 }
 
 .voiceLabel {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: $text;
   margin-right: 4px;
+  letter-spacing: -0.2px;
 }
 
 .voiceChevron {
-  font-size: 10px;
+  font-size: 11px;
   color: $textSecondary;
 }
 
 .micButton {
-  width: 80px;
-  height: 80px;
-  border-radius: 40px;
+  width: 82px;
+  height: 82px;
+  border-radius: 41px;
   background-color: $primary;
   justify-content: center;
   align-items: center;
-  elevation: 10;
+  shadow-color: $primary;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.65;
+  shadow-radius: 16px;
+  elevation: 12;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .micButtonActive {
   background-color: $error;
+  shadow-color: $error;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .micButtonListening {
   background-color: #5B8DEF;
+  shadow-color: #5B8DEF;
+}
+
+.micButtonSpeaking {
+  background-color: #8E59FF;
+  shadow-color: #8E59FF;
 }
 
 .micIcon {
@@ -242,28 +270,34 @@ $incognitoPurple: #9E77ED;
 
 .micIconActive {
   font-size: 26px;
+  font-weight: 700;
 }
 
 .incognitoPill {
   flex-direction: row;
   align-items: center;
-  background-color: $surface;
+  background-color: $surfaceElevated;
   padding-horizontal: 14px;
-  padding-vertical: 10px;
+  padding-vertical: 11px;
   border-radius: 24px;
-  border-width: 1px;
+  border-width: 1.5px;
   border-color: $border;
-  min-width: 95px;
+  min-width: 96px;
   justify-content: center;
 }
 
 .incognitoPillActive {
-  background-color: rgba(158, 119, 237, 0.18);
+  background-color: rgba(158, 119, 237, 0.2);
   border-color: $incognitoPurple;
+  shadow-color: $incognitoPurple;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.35;
+  shadow-radius: 8px;
+  elevation: 6;
 }
 
 .pillIcon {
-  font-size: 13px;
+  font-size: 14px;
   margin-right: 6px;
 }
 
@@ -274,5 +308,6 @@ $incognitoPurple: #9E77ED;
 }
 
 .pillLabelActive {
-  color: #D6BBFB;
+  color: #E9D7FE;
+  font-weight: 700;
 }

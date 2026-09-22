@@ -1,43 +1,26 @@
-import { Platform } from 'react-native';
-
 /**
- * API Configuration for FellowGrad AI
+ * Production API & WebSocket Configuration for FellowGrad AI
  *
- * Production backend:
- * Cloud Run
- * https://fellowgrad-backend-hlihip5lvq-uc.a.run.app
+ * Direct connection to Google Cloud Run:
+ * - REST API: https://fellowgrad-backend-hlihip5lvq-uc.a.run.app
+ * - Gemini Live WebSocket: wss://fellowgrad-backend-hlihip5lvq-uc.a.run.app/ws/live
+ *
+ * Standalone Release Build: Completely independent from USB, PC, or Metro.
  */
 
-const BACKEND_PORT = 5000;
+// Production Google Cloud Run backend
+const PRODUCTION_URL = 'https://fellowgrad-backend-hlihip5lvq-uc.a.run.app';
 
-// Optional LAN IP for local physical-device development.
-// Keep null because we are using Cloud Run.
-const CUSTOM_LAN_IP: string | null = null;
-
-// Production Cloud Run backend
-const PRODUCTION_URL =
-  'https://fellowgrad-backend-hlihip5lvq-uc.a.run.app';
-
+/**
+ * Returns the HTTPS REST API Base URL
+ */
 export const getApiBaseUrl = (): string => {
-  // Production Cloud Run
-  if (PRODUCTION_URL && PRODUCTION_URL.trim().length > 0) {
-    return PRODUCTION_URL.replace(/\/+$/, '');
-  }
-
-  // Physical device local development
-  if (CUSTOM_LAN_IP) {
-    return `http://${CUSTOM_LAN_IP}:${BACKEND_PORT}`;
-  }
-
-  // Android emulator local development
-  if (Platform.OS === 'android') {
-    return `http://10.0.2.2:${BACKEND_PORT}`;
-  }
-
-  // iOS simulator / Web local development
-  return `http://localhost:${BACKEND_PORT}`;
+  return PRODUCTION_URL.replace(/\/+$/, '');
 };
 
+/**
+ * Returns the WSS WebSocket Base URL
+ */
 export const getWsBaseUrl = (): string => {
   const httpUrl = getApiBaseUrl();
 
@@ -48,9 +31,12 @@ export const getWsBaseUrl = (): string => {
   return httpUrl.replace('http://', 'ws://');
 };
 
+/**
+ * Returns the complete secure Gemini Live WebSocket endpoint URL
+ * Path: /ws/live
+ */
 export const getLiveWebSocketUrl = (token: string): string => {
   const wsBaseUrl = getWsBaseUrl();
-
   return `${wsBaseUrl}/ws/live?token=${encodeURIComponent(token)}`;
 };
 

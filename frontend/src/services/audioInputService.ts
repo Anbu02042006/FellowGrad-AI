@@ -16,16 +16,53 @@ const { AudioStream } = NativeModules;
 export class AudioInputService {
   private subscription: EmitterSubscription | null = null;
   private isCapturing = false;
+  private hasPermissionCached = false;
 
   /**
-   * Request Android runtime RECORD_AUDIO permission
+   * Pre-check or prepare microphone permissions early to avoid startup delay
    */
-  async requestPermission(): Promise<boolean> {
+  async prepare(): Promise<boolean> {
     if (Platform.OS !== 'android') {
+      this.hasPermissionCached = true;
       return true;
     }
 
     try {
+      const alreadyGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+      );
+      if (alreadyGranted) {
+        this.hasPermissionCached = true;
+        return true;
+      }
+    } catch (err) {
+      console.warn('[AudioInput] Error pre-checking microphone permission:', err);
+    }
+    return false;
+  }
+
+  /**
+   * Request Android runtime RECORD_AUDIO permission with fast-path if already granted
+   */
+  async requestPermission(): Promise<boolean> {
+    if (Platform.OS !== 'android') {
+      this.hasPermissionCached = true;
+      return true;
+    }
+
+    if (this.hasPermissionCached) {
+      return true;
+    }
+
+    try {
+      const alreadyGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+      );
+      if (alreadyGranted) {
+        this.hasPermissionCached = true;
+        return true;
+      }
+
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
@@ -35,7 +72,11 @@ export class AudioInputService {
           buttonNegative: 'Deny',
         }
       );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
+      const isGranted = granted === PermissionsAndroid.RESULTS.GRANTED;
+      if (isGranted) {
+        this.hasPermissionCached = true;
+      }
+      return isGranted;
     } catch (err) {
       console.warn('[AudioInput] Error requesting microphone permission:', err);
       return false;
@@ -51,15 +92,17 @@ export class AudioInputService {
   async startCapture(
     onChunk: (base64Chunk: string) => void,
     sampleRate: number = 16000,
-    chunkSizeMs: number = 100
+    chunkSizeMs: number = 50
   ): Promise<boolean> {
     if (this.isCapturing) {
       return true;
     }
 
-    const hasPermission = await this.requestPermission();
-    if (!hasPermission) {
-      throw new Error('Microphone permission denied');
+    if (!this.hasPermissionCached) {
+      const hasPermission = await this.requestPermission();
+      if (!hasPermission) {
+        throw new Error('Microphone permission denied');
+      }
     }
 
     if (!AudioStream) {

@@ -19,11 +19,11 @@ import {
   AssistantState,
 } from '../../hooks/useVoiceAssistant';
 import conversationApi from '../../services/api/conversationApi';
+import audioInputService from '../../services/audioInputService';
 
 const HomeScreen = ({ navigation, route }: any) => {
   const { user } = useAuth();
 
-  const [selectedAgent] = useState('Maya');
   const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_VOICE_ID);
   const [isVoiceModalVisible, setVoiceModalVisible] = useState<boolean>(false);
   const [isCalling, setIsCalling] = useState(false);
@@ -37,7 +37,7 @@ const HomeScreen = ({ navigation, route }: any) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --------------------------------------------------
-  // Voice Assistant Hook
+  // Voice Assistant Hook (Voice-First Engine)
   // --------------------------------------------------
   const {
     state: assistantState,
@@ -46,6 +46,14 @@ const HomeScreen = ({ navigation, route }: any) => {
     stopListening,
     stopSpeaking,
   } = useVoiceAssistant(conversationId);
+
+  // --------------------------------------------------
+  // Pre-check Microphone Permission on Screen Mount
+  // Avoids OS permission dialog latency when Maya is tapped
+  // --------------------------------------------------
+  useEffect(() => {
+    audioInputService.prepare().catch(() => {});
+  }, []);
 
   // --------------------------------------------------
   // Persistent Voice Preference
@@ -78,7 +86,7 @@ const HomeScreen = ({ navigation, route }: any) => {
         } else {
           const created = await conversationApi.create({
             userId: user.userId,
-            title: `Voice with ${selectedAgent}`,
+            title: 'Voice with Maya',
           });
           setConversationId(created.data.id);
         }
@@ -88,7 +96,7 @@ const HomeScreen = ({ navigation, route }: any) => {
     };
 
     initConversation();
-  }, [user, selectedAgent, isIncognito]);
+  }, [user, isIncognito]);
 
   // --------------------------------------------------
   // Call Timer
@@ -140,7 +148,7 @@ const HomeScreen = ({ navigation, route }: any) => {
   };
 
   // --------------------------------------------------
-  // Status Text
+  // Clean State-Only Status Text (No Developer Logs)
   // --------------------------------------------------
   const getStatusText = () => {
     switch (assistantState) {
@@ -174,7 +182,7 @@ const HomeScreen = ({ navigation, route }: any) => {
   // --------------------------------------------------
   const handleCallPress = async () => {
     if (isCalling) {
-      // END CALL
+      // End Call
       try {
         await stopListening();
       } catch (error) {
@@ -185,7 +193,7 @@ const HomeScreen = ({ navigation, route }: any) => {
       return;
     }
 
-    // START CALL
+    // Start Call
     try {
       setTimer(0);
       setIsCalling(true);
@@ -197,7 +205,19 @@ const HomeScreen = ({ navigation, route }: any) => {
   };
 
   // --------------------------------------------------
-  // Voice Selection
+  // Maya Orb Press: Tap to Start or Tap to Barge-In
+  // --------------------------------------------------
+  const handleOrbPress = () => {
+    if (!isCalling) {
+      handleCallPress();
+    } else if (assistantState === AssistantState.SPEAKING) {
+      // User can tap orb to interrupt Maya
+      stopSpeaking();
+    }
+  };
+
+  // --------------------------------------------------
+  // Voice Selection with Active-Call Switching
   // --------------------------------------------------
   const handleSelectVoice = async (voiceId: string) => {
     setVoiceModalVisible(false);
@@ -210,7 +230,7 @@ const HomeScreen = ({ navigation, route }: any) => {
       console.warn('[HomeScreen] Error saving voice preference:', err);
     }
 
-    // Active call reconnect with new voice
+    // Seamless active call reconnect with new voice
     if (isCalling) {
       console.log(`[HomeScreen] Switching active call to voice: ${voiceId}`);
       try {
@@ -237,7 +257,7 @@ const HomeScreen = ({ navigation, route }: any) => {
 
     if (nextState) {
       setShowIncognitoNotice(true);
-      setTimeout(() => setShowIncognitoNotice(false), 3200);
+      setTimeout(() => setShowIncognitoNotice(false), 3500);
     } else {
       setShowIncognitoNotice(false);
     }
@@ -248,7 +268,7 @@ const HomeScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A0E21" />
+      <StatusBar barStyle="light-content" backgroundColor="#070913" />
 
       {/* ========================================== */}
       {/* TOP HEADER */}
@@ -259,6 +279,7 @@ const HomeScreen = ({ navigation, route }: any) => {
           style={styles.profileButton}
           onPress={() => navigation.navigate('Settings')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
           accessibilityLabel="Open settings and profile"
           activeOpacity={0.7}
         >
@@ -275,29 +296,30 @@ const HomeScreen = ({ navigation, route }: any) => {
             {getGreeting()}
           </Text>
           <Text style={styles.greetingSubtitle}>
-            {isIncognito ? 'Private session · Nothing saved' : 'Ready when you are.'}
+            {isIncognito ? '🕶 Incognito · Ephemeral session' : 'Ready when you are.'}
           </Text>
         </View>
 
-        {/* Incognito Mode Toggle Button */}
+        {/* Incognito Top Quick Toggle */}
         <TouchableOpacity
           style={[styles.incognitoButton, isIncognito && styles.incognitoButtonActive]}
           onPress={toggleIncognito}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
           accessibilityLabel={isIncognito ? 'Disable incognito mode' : 'Enable incognito mode'}
           activeOpacity={0.7}
         >
           <Text style={styles.incognitoIcon}>
-            {isIncognito ? '👻' : '🛡️'}
+            {isIncognito ? '🕶️' : '🛡️'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Incognito Notice Tooltip */}
+      {/* Incognito Subtle Notice Banner */}
       {showIncognitoNotice && (
         <View style={styles.noticeBanner}>
           <Text style={styles.noticeText}>
-            🔒 Incognito active: Your conversation won't be saved or remembered.
+            🕶 Incognito active: Nothing from this conversation will be remembered.
           </Text>
         </View>
       )}
@@ -306,16 +328,28 @@ const HomeScreen = ({ navigation, route }: any) => {
       {/* CENTER AI AVATAR / ORB */}
       {/* ========================================== */}
       <View style={styles.centerStage}>
-        <View style={styles.orbWrapper}>
+        <TouchableOpacity
+          style={styles.orbWrapper}
+          onPress={handleOrbPress}
+          activeOpacity={0.88}
+          accessibilityRole="button"
+          accessibilityLabel={
+            !isCalling
+              ? 'Start voice conversation with Maya'
+              : assistantState === AssistantState.SPEAKING
+              ? 'Tap to interrupt Maya'
+              : 'Maya is listening'
+          }
+        >
           <VoiceOrb state={assistantState} isIncognito={isIncognito} />
-        </View>
+        </TouchableOpacity>
 
-        {/* Agent Name & Status */}
+        {/* Agent Name & Clean Voice State */}
         <View style={styles.statusContainer}>
           <Text style={styles.agentName}>Maya</Text>
           <Text style={styles.statusText}>{getStatusText()}</Text>
 
-          {/* Active Call Duration */}
+          {/* Active Call Duration Badge */}
           {isCalling && (
             <View style={styles.timerBadge}>
               <View style={styles.timerDot} />
@@ -326,7 +360,7 @@ const HomeScreen = ({ navigation, route }: any) => {
       </View>
 
       {/* ========================================== */}
-      {/* BOTTOM ACTION BAR */}
+      {/* BOTTOM ACTION BAR (FLOATING DOCK) */}
       {/* ========================================== */}
       <View style={styles.bottomBar}>
         <View style={styles.controlsRow}>
@@ -334,6 +368,7 @@ const HomeScreen = ({ navigation, route }: any) => {
           <TouchableOpacity
             style={styles.voiceSelectorPill}
             onPress={() => setVoiceModalVisible(true)}
+            accessibilityRole="button"
             accessibilityLabel={`Selected voice: ${currentVoiceObj.label}. Tap to change voice.`}
             activeOpacity={0.75}
           >
@@ -342,15 +377,17 @@ const HomeScreen = ({ navigation, route }: any) => {
             <Text style={styles.voiceChevron}>▾</Text>
           </TouchableOpacity>
 
-          {/* Primary Action: Voice Call Button */}
+          {/* Primary Action: Large Voice Call Button */}
           <TouchableOpacity
             style={[
               styles.micButton,
               isCalling && styles.micButtonActive,
               assistantState === AssistantState.LISTENING && styles.micButtonListening,
+              assistantState === AssistantState.SPEAKING && styles.micButtonSpeaking,
             ]}
             onPress={handleCallPress}
-            accessibilityLabel={isCalling ? 'End voice call' : 'Start voice call'}
+            accessibilityRole="button"
+            accessibilityLabel={isCalling ? 'End voice call' : 'Start voice call with Maya'}
             activeOpacity={0.8}
           >
             <Text style={[styles.micIcon, isCalling && styles.micIconActive]}>
@@ -358,14 +395,15 @@ const HomeScreen = ({ navigation, route }: any) => {
             </Text>
           </TouchableOpacity>
 
-          {/* Secondary Control: Incognito Badge / Mode */}
+          {/* Secondary Control: Incognito Mode Toggle Pill */}
           <TouchableOpacity
             style={[styles.incognitoPill, isIncognito && styles.incognitoPillActive]}
             onPress={toggleIncognito}
-            accessibilityLabel={`Incognito mode is ${isIncognito ? 'on' : 'off'}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Incognito mode is ${isIncognito ? 'active' : 'inactive'}`}
             activeOpacity={0.75}
           >
-            <Text style={styles.pillIcon}>{isIncognito ? '👻' : '🛡️'}</Text>
+            <Text style={styles.pillIcon}>{isIncognito ? '🕶️' : '🛡️'}</Text>
             <Text style={[styles.pillLabel, isIncognito && styles.pillLabelActive]}>
               {isIncognito ? 'Incognito' : 'Private'}
             </Text>
@@ -374,7 +412,7 @@ const HomeScreen = ({ navigation, route }: any) => {
       </View>
 
       {/* ========================================== */}
-      {/* VOICE SELECTOR MODAL */}
+      {/* VOICE SELECTOR BOTTOM SHEET MODAL */}
       {/* ========================================== */}
       <VoiceSelectorModal
         visible={isVoiceModalVisible}

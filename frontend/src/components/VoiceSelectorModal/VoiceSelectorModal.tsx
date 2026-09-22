@@ -29,6 +29,7 @@ const VoiceSelectorModal: React.FC<Props> = ({
       transparent={true}
       visible={visible}
       onRequestClose={onClose}
+      statusBarTranslucent={true}
     >
       <View style={styles.overlay}>
         <TouchableWithoutFeedback onPress={onClose}>
@@ -36,26 +37,28 @@ const VoiceSelectorModal: React.FC<Props> = ({
         </TouchableWithoutFeedback>
 
         <View style={styles.modalContainer}>
-          {/* Top drag handle */}
+          {/* Top sheet handle */}
           <View style={styles.handleContainer}>
             <View style={styles.handle} />
           </View>
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Assistant Voice</Text>
+            <View>
+              <Text style={styles.title}>Companion Voice</Text>
+              <Text style={styles.subtitle}>Choose Maya's tone of voice</Text>
+            </View>
+
             <TouchableOpacity
               style={styles.closeButton}
               onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
               accessibilityLabel="Close voice selector"
             >
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.subtitle}>
-            Choose Maya's tone of voice
-          </Text>
 
           {/* 4 Selectable Voice Cards */}
           <ScrollView
@@ -73,7 +76,10 @@ const VoiceSelectorModal: React.FC<Props> = ({
                     isSelected && styles.voiceCardSelected,
                   ]}
                   onPress={() => onSelect(voice.id)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.75}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`${voice.label} voice, ${voice.subtitle}.${isSelected ? ' Currently selected.' : ''}`}
                 >
                   <View style={styles.voiceLeft}>
                     <View
@@ -87,7 +93,14 @@ const VoiceSelectorModal: React.FC<Props> = ({
 
                     <View style={styles.voiceInfo}>
                       <View style={styles.voiceNameRow}>
-                        <Text style={styles.voiceLabel}>{voice.label}</Text>
+                        <Text
+                          style={[
+                            styles.voiceLabel,
+                            isSelected && styles.voiceLabelSelected,
+                          ]}
+                        >
+                          {voice.label}
+                        </Text>
                         {voice.isDefault && (
                           <View style={styles.defaultBadge}>
                             <Text style={styles.defaultBadgeText}>DEFAULT</Text>
@@ -95,13 +108,10 @@ const VoiceSelectorModal: React.FC<Props> = ({
                         )}
                       </View>
                       <Text style={styles.voiceSubtitle}>{voice.subtitle}</Text>
-                      <Text style={styles.voiceDescription}>
-                        {voice.description}
-                      </Text>
                     </View>
                   </View>
 
-                  {/* Radio indicator */}
+                  {/* Radio checkmark indicator */}
                   <View
                     style={[
                       styles.radioCircle,
@@ -109,7 +119,7 @@ const VoiceSelectorModal: React.FC<Props> = ({
                     ]}
                   >
                     {isSelected && (
-                      <Text style={styles.radioCheckmark}>✓</Text>
+                      <View style={styles.radioInnerDot} />
                     )}
                   </View>
                 </TouchableOpacity>

@@ -7,6 +7,14 @@
  */
 
 const admin = require('firebase-admin');
+const { initializeApp, getApps, cert, applicationDefault } = require('firebase-admin/app');
+const { getFirestore: getAdminFirestore, FieldValue: AdminFieldValue } = require('firebase-admin/firestore');
+
+// Ensure backward compatibility on the admin namespace
+if (!admin.firestore) {
+  admin.firestore = getAdminFirestore;
+  admin.firestore.FieldValue = AdminFieldValue;
+}
 
 let firestoreInstance = null;
 let isFirestoreConnected = false;
@@ -26,15 +34,16 @@ const initFirestore = () => {
   }
 
   try {
-    const hasApps = Array.isArray(admin?.apps) && admin.apps.length > 0;
-    if (!hasApps) {
+    const existingApps = getApps();
+    let app;
+    if (existingApps.length === 0) {
       if (
         process.env.FIREBASE_CLIENT_EMAIL &&
         process.env.FIREBASE_PRIVATE_KEY
       ) {
         console.log(`[Firestore] Initializing Firebase Admin with service account credentials for project: ${GCP_PROJECT_ID}`);
-        admin.initializeApp({
-          credential: admin.credential.cert({
+        app = initializeApp({
+          credential: cert({
             projectId: GCP_PROJECT_ID,
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
             privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
@@ -43,20 +52,16 @@ const initFirestore = () => {
         });
       } else {
         console.log(`[Firestore] Initializing Firebase Admin via Application Default Credentials (ADC) for project: ${GCP_PROJECT_ID}`);
-        if (admin.credential && typeof admin.credential.applicationDefault === 'function') {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-            projectId: GCP_PROJECT_ID,
-          });
-        } else {
-          admin.initializeApp({
-            projectId: GCP_PROJECT_ID,
-          });
-        }
+        app = initializeApp({
+          credential: applicationDefault(),
+          projectId: GCP_PROJECT_ID,
+        });
       }
+    } else {
+      app = existingApps[0];
     }
 
-    firestoreInstance = admin.firestore();
+    firestoreInstance = getAdminFirestore(app);
     // Configure settings for timestamp handling
     try {
       firestoreInstance.settings({ ignoreUndefinedProperties: true });
@@ -65,9 +70,11 @@ const initFirestore = () => {
     }
 
     isFirestoreConnected = true;
+    console.log('[Firestore] Connected to real Firestore');
     console.log(`[Firestore] Google Cloud Firestore initialized successfully for project: ${GCP_PROJECT_ID}`);
   } catch (err) {
-    console.warn(`[Firestore] Cloud Firestore initialization note (${err.message}). Using resilient local in-memory store for development/tests.`);
+    console.error(`[Firestore] Cloud Firestore initialization failed: ${err.message}`);
+    console.log('[Firestore] Using in-memory fallback only when real Firestore is unavailable');
     isFirestoreConnected = false;
     firestoreInstance = createInMemoryFirestore();
   }
@@ -152,6 +159,7 @@ function createInMemoryFirestore() {
               docs.push({
                 id: remainder,
                 exists: true,
+                ref: createDocRef(`${prefix}${remainder}`),
                 data: () => ({ ...val }),
               });
             }
@@ -229,18 +237,20 @@ const getFirestore = () => {
 // Safe FieldValue helper
 const FieldValue = {
   serverTimestamp: () => {
-    try {
-      return admin.firestore.FieldValue.serverTimestamp();
-    } catch (_) {
-      return new Date().toISOString();
+    if (isFirestoreConnected && AdminFieldValue) {
+      try {
+        return AdminFieldValue.serverTimestamp();
+      } catch (_) {}
     }
+    return new Date().toISOString();
   },
   increment: (n) => {
-    try {
-      return admin.firestore.FieldValue.increment(n);
-    } catch (_) {
-      return n;
+    if (isFirestoreConnected && AdminFieldValue) {
+      try {
+        return AdminFieldValue.increment(n);
+      } catch (_) {}
     }
+    return n;
   },
 };
 
