@@ -12,6 +12,7 @@ const { GeminiLiveService } = require('../services/geminiLiveService');
 const MemoryService = require('../services/memoryService');
 const ConversationService = require('../services/conversationService');
 const ConversationSearchService = require('../services/conversationSearchService');
+const EducationSearchService = require('../services/education/educationSearchService');
 const geminiLiveConfig = require('../config/geminiLive');
 
 const JWT_SECRET = process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970';
@@ -125,36 +126,52 @@ const setupLiveVoiceSocket = (httpServer) => {
           }
 
           // Asynchronously persist completed user and assistant messages without blocking real-time audio
-          // Strictly bypass ALL storage when in Incognito mode
-          if (!isIncognito && isComplete && content && conversationId && userId) {
+          if (isComplete && content) {
             if (role === 'USER') {
-              ConversationService.saveUserMessage(userId, conversationId, content, 'voice').catch((err) => {
-                console.warn(`[Conversation] Could not persist user message: ${err.message}`);
-              });
+              // 1. Live Education Intent & Grounding Layer
+              EducationSearchService.retrieveContext(content)
+                .then((eduResult) => {
+                  if (eduResult && eduResult.groundedContext && liveSession && liveSession.isConnected) {
+                    console.log(`[VoiceSession] Injecting grounded education context (${eduResult.intent}) into live session`);
+                    liveSession.sendTextMessage(eduResult.groundedContext);
+                  }
+                })
+                .catch((eduErr) => {
+                  console.warn(`[VoiceSession] Education retrieval note: ${eduErr.message}`);
+                });
 
-              // Query-time historical conversation recall
-              const detection = ConversationSearchService.detectHistoricalQuery(content);
-              if (detection.isHistorical) {
-                ConversationSearchService.getRelevantConversationContext(userId, content)
-                  .then((historicalContext) => {
-                    if (historicalContext && liveSession && liveSession.isConnected) {
-                      console.log(`[VoiceSession] Injecting recalled historical conversation context into live session for ${userId}`);
-                      liveSession.sendTextMessage(`[SYSTEM MEMORY RECALL CONTEXT]\n${historicalContext}`);
-                    }
-                  })
-                  .catch((searchErr) => {
-                    console.warn(`[VoiceSession] Note during historical recall: ${searchErr.message}`);
-                  });
+              // 2. Persist user message & historical recall (Strictly bypassed in Incognito mode)
+              if (!isIncognito && conversationId && userId) {
+                ConversationService.saveUserMessage(userId, conversationId, content, 'voice').catch((err) => {
+                  console.warn(`[Conversation] Could not persist user message: ${err.message}`);
+                });
+
+                // Query-time historical conversation recall
+                const detection = ConversationSearchService.detectHistoricalQuery(content);
+                if (detection.isHistorical) {
+                  ConversationSearchService.getRelevantConversationContext(userId, content)
+                    .then((historicalContext) => {
+                      if (historicalContext && liveSession && liveSession.isConnected) {
+                        console.log(`[VoiceSession] Injecting recalled historical conversation context into live session for ${userId}`);
+                        liveSession.sendTextMessage(`[SYSTEM MEMORY RECALL CONTEXT]\n${historicalContext}`);
+                      }
+                    })
+                    .catch((searchErr) => {
+                      console.warn(`[VoiceSession] Note during historical recall: ${searchErr.message}`);
+                    });
+                }
               }
             } else if (role === 'ASSISTANT') {
-              ConversationService.saveAssistantMessage(userId, conversationId, content, 'voice').catch((err) => {
-                console.warn(`[Conversation] Could not persist assistant message: ${err.message}`);
-              });
+              if (!isIncognito && conversationId && userId) {
+                ConversationService.saveAssistantMessage(userId, conversationId, content, 'voice').catch((err) => {
+                  console.warn(`[Conversation] Could not persist assistant message: ${err.message}`);
+                });
 
-              // Asynchronously extract candidate long-term memories in background
-              MemoryService.extractMemoriesFromTurn(userId, conversationId, content).catch((err) => {
-                console.warn(`[MemoryService] Background extraction note: ${err.message}`);
-              });
+                // Asynchronously extract candidate long-term memories in background
+                MemoryService.extractMemoriesFromTurn(userId, conversationId, content).catch((err) => {
+                  console.warn(`[MemoryService] Background extraction note: ${err.message}`);
+                });
+              }
             }
           }
         },

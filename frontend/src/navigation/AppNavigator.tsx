@@ -22,14 +22,21 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
+    console.log('[NAV] Showing Splash / Loading screen...');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#070913' }}>
         <ActivityIndicator size="large" color="#6C63FF" />
       </View>
     );
+  }
+
+  if (!isAuthenticated) {
+    console.log('[NAV] Showing Welcome/Auth stack (unauthenticated)');
+  } else {
+    console.log('[NAV] Showing Main stack (authenticated as', user?.email || user?.name, ')');
   }
 
   return (

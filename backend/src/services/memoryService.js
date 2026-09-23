@@ -591,7 +591,7 @@ ${dialogueText}
    * Build system instruction specifically for Incognito sessions (no personal memory injected)
    */
   static buildIncognitoSystemInstruction() {
-    return `${geminiLiveConfig.systemPrompt}\n\n--- INCOGNITO SESSION ACTIVE ---\nThis is an ephemeral, private incognito session. You are Maya, a modern, helpful, friendly personal AI companion. Answer the user's questions naturally and conversationally. Do not attempt to save, reference past personal records, or persist any conversation details.`;
+    return `${geminiLiveConfig.systemPrompt}\n\n--- INCOGNITO SESSION ACTIVE ---\nThis is an ephemeral, private incognito session. You are Maya, FellowGrad's education-focused personal AI companion. Focus strictly on education, studies, and student support. Answer questions naturally and conversationally. Do not attempt to save, reference past personal records, or persist any conversation details.`;
   }
 }
 

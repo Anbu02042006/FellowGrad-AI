@@ -1,19 +1,38 @@
-$background: #070913;
-$surface: #111425;
-$surfaceElevated: #181C33;
-$primary: #6C63FF;
-$primaryLight: #8E59FF;
+$background: #050814;
+$surface: rgba(18, 25, 48, 0.75);
+$surfaceElevated: rgba(22, 32, 60, 0.85);
+$primary: #3B82F6;
+$primaryGradientStart: #3B67F0;
+$primaryGradientEnd: #7C3AED;
 $text: #FFFFFF;
-$textSecondary: #8D93A5;
-$border: #1E233D;
-$borderGlow: rgba(108, 99, 255, 0.35);
-$success: #12B76A;
-$error: #F04438;
-$incognitoPurple: #9E77ED;
+$textSecondary: #94A3B8;
+$textMuted: #64748B;
+$border: rgba(255, 255, 255, 0.1);
+$borderHighlight: rgba(99, 140, 255, 0.35);
+$success: #10B981;
+$error: #F43F5E;
+$incognitoPurple: #A855F7;
 
 .container {
   flex: 1;
   background-color: $background;
+  position: relative;
+}
+
+// Background flowing waves container
+.backgroundWaves {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.contentWrapper {
+  flex: 1;
+  z-index: 1;
+  justify-content: space-between;
 }
 
 // --------------------------------------------------
@@ -24,8 +43,8 @@ $incognitoPurple: #9E77ED;
   align-items: center;
   justify-content: space-between;
   padding-horizontal: 20px;
-  padding-top: 14px;
-  padding-bottom: 8px;
+  padding-top: 8px;
+  padding-bottom: 6px;
 }
 
 .profileButton {
@@ -36,84 +55,155 @@ $incognitoPurple: #9E77ED;
 }
 
 .avatarCircle {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: #2D63FF;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background-color: #2563EB;
   justify-content: center;
   align-items: center;
   border-width: 1.5px;
-  border-color: rgba(255, 255, 255, 0.22);
-  shadow-color: #2D63FF;
+  border-color: rgba(255, 255, 255, 0.25);
+  shadow-color: #2563EB;
   shadow-offset: 0 0;
-  shadow-opacity: 0.4;
-  shadow-radius: 6px;
-  elevation: 4;
+  shadow-opacity: 0.55;
+  shadow-radius: 10px;
+  elevation: 6;
 }
 
 .avatarInitial {
   color: #FFFFFF;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .greetingContainer {
   flex: 1;
   align-items: center;
-  padding-horizontal: 12px;
+  padding-horizontal: 8px;
+}
+
+.greetingTitleRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 
 .greetingTitle {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
-  color: $text;
+  color: #FFFFFF;
   letter-spacing: -0.3px;
+}
+
+.greetingName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #38BDF8;
+  letter-spacing: -0.3px;
+}
+
+.greetingEmoji {
+  font-size: 16px;
+  margin-left: 4px;
 }
 
 .greetingSubtitle {
   font-size: 12px;
   color: $textSecondary;
-  margin-top: 2px;
+  margin-top: 3px;
   font-weight: 500;
+  letter-spacing: 0.1px;
 }
 
-.incognitoButton {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: $surface;
+.shieldHeaderButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background-color: rgba(20, 28, 52, 0.85);
   justify-content: center;
   align-items: center;
   border-width: 1.5px;
-  border-color: $border;
+  border-color: rgba(255, 255, 255, 0.12);
+  position: relative;
 }
 
-.incognitoButtonActive {
-  background-color: rgba(158, 119, 237, 0.18);
-  border-color: $incognitoPurple;
-  shadow-color: $incognitoPurple;
-  shadow-offset: 0 0;
-  shadow-opacity: 0.5;
-  shadow-radius: 8px;
-  elevation: 6;
+.shieldHeaderButtonActive {
+  border-color: rgba(168, 85, 247, 0.6);
+  background-color: rgba(168, 85, 247, 0.2);
 }
 
-.incognitoIcon {
+.shieldDot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 4.5px;
+  background-color: $success;
+  border-width: 1.5px;
+  border-color: #050814;
+}
+
+// --------------------------------------------------
+// QUICK ACTION PROMPT CARDS (4-GRID ROW)
+// --------------------------------------------------
+.quickCardsContainer {
+  flex-direction: row;
+  justify-content: space-between;
+  padding-horizontal: 16px;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.quickCard {
+  flex: 1;
+  margin-horizontal: 3.5px;
+  padding-vertical: 12px;
+  padding-horizontal: 4px;
+  border-radius: 14px;
+  background-color: rgba(18, 25, 46, 0.7);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.08);
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
+}
+
+.quickCardIconContainer {
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.quickCardIcon {
   font-size: 18px;
+}
+
+.quickCardLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #CBD5E1;
+  text-align: center;
+  line-height: 14px;
+  letter-spacing: -0.1px;
 }
 
 // --------------------------------------------------
 // NOTICE BANNER
 // --------------------------------------------------
 .noticeBanner {
-  margin-horizontal: 24px;
+  margin-horizontal: 20px;
   margin-top: 6px;
-  padding-vertical: 10px;
-  padding-horizontal: 16px;
-  border-radius: 14px;
-  background-color: rgba(158, 119, 237, 0.14);
+  padding-vertical: 8px;
+  padding-horizontal: 14px;
+  border-radius: 12px;
+  background-color: rgba(168, 85, 247, 0.16);
   border-width: 1px;
-  border-color: rgba(158, 119, 237, 0.35);
+  border-color: rgba(168, 85, 247, 0.35);
   align-items: center;
 }
 
@@ -131,10 +221,11 @@ $incognitoPurple: #9E77ED;
   flex: 1;
   justify-content: center;
   align-items: center;
+  margin-vertical: 10px;
 }
 
 .orbWrapper {
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .statusContainer {
@@ -144,42 +235,97 @@ $incognitoPurple: #9E77ED;
 .agentName {
   font-size: 28px;
   font-weight: 700;
-  color: $text;
-  letter-spacing: -0.6px;
-  margin-bottom: 6px;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
 }
 
-.statusText {
-  font-size: 15px;
-  color: $textSecondary;
-  font-weight: 600;
+// Gradient Capsule Status Pill
+.gradientStatusPill {
+  flex-direction: row;
+  align-items: center;
+  padding-horizontal: 18px;
+  padding-vertical: 9px;
+  border-radius: 22px;
+  background-color: #4338CA;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.25);
+  shadow-color: #6366F1;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.55;
+  shadow-radius: 12px;
+  elevation: 8;
+  margin-bottom: 10px;
+}
+
+.gradientStatusPillSpeaking {
+  background-color: #7C3AED;
+  shadow-color: #8B5CF6;
+}
+
+.gradientStatusPillListening {
+  background-color: #3B67F0;
+  shadow-color: #60A5FA;
+}
+
+.statusWaveIcon {
+  margin-right: 8px;
+}
+
+.statusPillText {
+  font-size: 14px;
+  color: #FFFFFF;
+  font-weight: 700;
   letter-spacing: 0.2px;
 }
 
+.promptSubtitleLine1 {
+  font-size: 13.5px;
+  color: $textSecondary;
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0.1px;
+}
+
+.promptSubtitleLine2 {
+  font-size: 13px;
+  color: $textSecondary;
+  font-weight: 400;
+  text-align: center;
+  margin-top: 2px;
+  letter-spacing: 0.1px;
+}
+
+// Active Call Duration Badge
 .timerBadge {
   flex-direction: row;
   align-items: center;
-  background-color: $surface;
+  background-color: rgba(18, 25, 46, 0.85);
   padding-horizontal: 14px;
   padding-vertical: 6px;
-  border-radius: 16px;
+  border-radius: 18px;
   border-width: 1px;
-  border-color: $border;
+  border-color: rgba(255, 255, 255, 0.12);
   margin-top: 14px;
 }
 
 .timerDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 3.5px;
+  width: 7.5px;
+  height: 7.5px;
+  border-radius: 4px;
   background-color: $error;
   margin-right: 8px;
+  shadow-color: $error;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.9;
+  shadow-radius: 6px;
+  elevation: 4;
 }
 
 .timerValue {
-  color: $text;
-  font-size: 14px;
-  font-weight: 600;
+  color: #FFFFFF;
+  font-size: 13.5px;
+  font-weight: 700;
   letter-spacing: 0.5px;
 }
 
@@ -187,8 +333,8 @@ $incognitoPurple: #9E77ED;
 // BOTTOM ACTION BAR (FLOATING DOCK)
 // --------------------------------------------------
 .bottomBar {
-  padding-horizontal: 24px;
-  padding-bottom: 38px;
+  padding-horizontal: 20px;
+  padding-bottom: 24px;
   align-items: center;
 }
 
@@ -197,19 +343,20 @@ $incognitoPurple: #9E77ED;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 380px;
+  max-width: 390px;
 }
 
+// Voice Selector Pill (Left)
 .voiceSelectorPill {
   flex-direction: row;
   align-items: center;
-  background-color: $surfaceElevated;
+  background-color: rgba(20, 28, 54, 0.85);
   padding-horizontal: 14px;
   padding-vertical: 11px;
-  border-radius: 24px;
-  border-width: 1.5px;
-  border-color: $border;
-  min-width: 96px;
+  border-radius: 26px;
+  border-width: 1.2px;
+  border-color: rgba(255, 255, 255, 0.12);
+  min-width: 106px;
   justify-content: center;
 }
 
@@ -219,10 +366,10 @@ $incognitoPurple: #9E77ED;
 }
 
 .voiceLabel {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: $text;
-  margin-right: 4px;
+  color: #FFFFFF;
+  margin-right: 5px;
   letter-spacing: -0.2px;
 }
 
@@ -231,83 +378,130 @@ $incognitoPurple: #9E77ED;
   color: $textSecondary;
 }
 
-.micButton {
-  width: 82px;
-  height: 82px;
-  border-radius: 41px;
-  background-color: $primary;
+// Center Large Glowing Call / End Button
+.micButtonWrapper {
+  width: 88px;
+  height: 88px;
   justify-content: center;
   align-items: center;
-  shadow-color: $primary;
+}
+
+.micOuterRing {
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 44px;
+  background-color: rgba(244, 63, 94, 0.18);
+  border-width: 1.5px;
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.micOuterRingInactive {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.micButton {
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
+  background-color: #2563EB;
+  justify-content: center;
+  align-items: center;
+  shadow-color: #2563EB;
   shadow-offset: 0 0;
-  shadow-opacity: 0.65;
-  shadow-radius: 16px;
+  shadow-opacity: 0.75;
+  shadow-radius: 18px;
   elevation: 12;
   border-width: 2px;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .micButtonActive {
   background-color: $error;
   shadow-color: $error;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.micButtonListening {
-  background-color: #5B8DEF;
-  shadow-color: #5B8DEF;
-}
-
-.micButtonSpeaking {
-  background-color: #8E59FF;
-  shadow-color: #8E59FF;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .micIcon {
-  font-size: 32px;
+  font-size: 28px;
   color: #FFFFFF;
 }
 
 .micIconActive {
   font-size: 26px;
   font-weight: 700;
+  color: #FFFFFF;
 }
 
-.incognitoPill {
+// Private Pill with Switch (Right)
+.privatePill {
   flex-direction: row;
   align-items: center;
-  background-color: $surfaceElevated;
+  background-color: rgba(20, 28, 54, 0.85);
   padding-horizontal: 14px;
-  padding-vertical: 11px;
-  border-radius: 24px;
-  border-width: 1.5px;
-  border-color: $border;
-  min-width: 96px;
-  justify-content: center;
+  padding-vertical: 10px;
+  border-radius: 26px;
+  border-width: 1.2px;
+  border-color: rgba(255, 255, 255, 0.12);
+  min-width: 110px;
+  justify-content: space-between;
 }
 
-.incognitoPillActive {
-  background-color: rgba(158, 119, 237, 0.2);
-  border-color: $incognitoPurple;
-  shadow-color: $incognitoPurple;
-  shadow-offset: 0 0;
-  shadow-opacity: 0.35;
-  shadow-radius: 8px;
-  elevation: 6;
+.privatePillActive {
+  border-color: rgba(168, 85, 247, 0.45);
+  background-color: rgba(24, 28, 58, 0.9);
 }
 
-.pillIcon {
+.privatePillLeft {
+  flex-direction: row;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.privateIcon {
   font-size: 14px;
   margin-right: 6px;
 }
 
-.pillLabel {
-  font-size: 13px;
+.privateLabel {
+  font-size: 13.5px;
   font-weight: 600;
-  color: $textSecondary;
+  color: #FFFFFF;
+  letter-spacing: -0.2px;
 }
 
-.pillLabelActive {
+.privateLabelActive {
   color: #E9D7FE;
   font-weight: 700;
+}
+
+// Mini Toggle Switch
+.miniSwitch {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: #334155;
+  padding: 2px;
+  justify-content: center;
+}
+
+.miniSwitchActive {
+  background-color: $success;
+}
+
+.miniSwitchThumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background-color: #FFFFFF;
+  shadow-color: #000000;
+  shadow-offset: 0 1px;
+  shadow-opacity: 0.3;
+  shadow-radius: 2px;
+  elevation: 2;
+}
+
+.miniSwitchThumbActive {
+  align-self: flex-end;
 }

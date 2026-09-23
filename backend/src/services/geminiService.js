@@ -1,5 +1,6 @@
 const axios = require('axios');
 const geminiConfig = require('../config/gemini');
+const EducationSearchService = require('./education/educationSearchService');
 
 class GeminiService {
   /**
@@ -10,16 +11,26 @@ class GeminiService {
   static async getAiResponse(userMessage) {
     const { apiKey, model, baseUrl, systemPrompt } = geminiConfig;
 
+    // Check education scope & retrieve grounded context
+    const eduResult = await EducationSearchService.retrieveContext(userMessage);
+    if (!eduResult.isEducation && eduResult.redirectMessage) {
+      return eduResult.redirectMessage;
+    }
+
     if (!apiKey) {
       console.warn('[GeminiService] GEMINI_API_KEY is not set. Returning default companion message.');
-      return `Hi there! I am FellowGrad, your academic and emotional companion. How are your studies and goals going today? (Note: Set GEMINI_API_KEY in .env to activate live Gemini AI responses).`;
+      return `Hi there! I am FellowGrad, your education and student companion. How can I help with your studies, colleges, courses, or admissions today? (Note: Set GEMINI_API_KEY in .env to activate live Gemini AI responses).`;
     }
 
     const url = `${baseUrl}${model}:generateContent`;
 
+    const effectivePrompt = eduResult.groundedContext
+      ? `${systemPrompt}\n\n${eduResult.groundedContext}`
+      : systemPrompt;
+
     const requestBody = {
       systemInstruction: {
-        parts: [{ text: systemPrompt }],
+        parts: [{ text: effectivePrompt }],
       },
       contents: [
         {

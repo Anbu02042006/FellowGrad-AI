@@ -43,49 +43,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check for stored session on application launch
     const loadStoredAuth = async () => {
+      console.log('[AUTH] App starting');
+      console.log('[AUTH] Restoring session...');
+
       try {
         const storedToken = await AsyncStorage.getItem('accessToken');
         const storedUser = await AsyncStorage.getItem('userData');
 
-        if (storedToken && storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
+        if (!storedToken || !storedUser) {
+          console.log('[AUTH] Session not found (unauthenticated) -> Navigating to Welcome');
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
 
-          // In background, validate and refresh user data
-          try {
-            const meRes = await authApi.getMe();
-            if (meRes.data?.user) {
-              setUser(meRes.data.user);
-              await AsyncStorage.setItem('userData', JSON.stringify(meRes.data.user));
-            }
-          } catch (validateErr) {
-            // Check if refresh token can restore the session
-            const refreshToken = await AsyncStorage.getItem('refreshToken');
-            if (refreshToken) {
-              try {
-                const refreshRes = await authApi.refresh(refreshToken);
-                if (refreshRes.data?.token) {
-                  await AsyncStorage.setItem('accessToken', refreshRes.data.token);
-                  if (refreshRes.data.refreshToken) {
-                    await AsyncStorage.setItem('refreshToken', refreshRes.data.refreshToken);
-                  }
-                  if (refreshRes.data.user) {
-                    setUser(refreshRes.data.user);
-                    await AsyncStorage.setItem('userData', JSON.stringify(refreshRes.data.user));
-                  }
+        console.log('[AUTH] Stored credentials found, validating with backend...');
+        try {
+          const meRes = await authApi.getMe();
+          if (meRes.data?.user) {
+            console.log('[AUTH] Session verified with backend for:', meRes.data.user.email);
+            setUser(meRes.data.user);
+            await AsyncStorage.setItem('userData', JSON.stringify(meRes.data.user));
+          } else {
+            throw new Error('Invalid user payload from backend');
+          }
+        } catch (validateErr: any) {
+          console.warn('[AUTH] Token validation failed:', validateErr.message);
+          // Check if refresh token can restore the session
+          const refreshToken = await AsyncStorage.getItem('refreshToken');
+          if (refreshToken) {
+            console.log('[AUTH] Attempting refresh token exchange...');
+            try {
+              const refreshRes = await authApi.refresh(refreshToken);
+              if (refreshRes.data?.token && refreshRes.data?.user) {
+                console.log('[AUTH] Session refreshed successfully for:', refreshRes.data.user.email);
+                await AsyncStorage.setItem('accessToken', refreshRes.data.token);
+                if (refreshRes.data.refreshToken) {
+                  await AsyncStorage.setItem('refreshToken', refreshRes.data.refreshToken);
                 }
-              } catch (_) {
-                // If refresh fails, clear expired session
-                await clearAuthStorage();
-                setUser(null);
+                await AsyncStorage.setItem('userData', JSON.stringify(refreshRes.data.user));
+                setUser(refreshRes.data.user);
+                setIsLoading(false);
+                return;
               }
+            } catch (refreshErr: any) {
+              console.warn('[AUTH] Refresh token failed:', refreshErr.message);
             }
           }
+
+          // If we reach here, stored token is invalid/expired
+          console.log('[AUTH] No valid session restored. Purging stale tokens -> Navigating to Welcome');
+          await clearAuthStorage();
+          setUser(null);
         }
       } catch (e) {
-        console.error('[AuthContext] Failed to load stored session:', e);
+        console.error('[AUTH] Failed to load stored session:', e);
+        await clearAuthStorage();
+        setUser(null);
       } finally {
         setIsLoading(false);
+        console.log('[AUTH] Session restoration process finished.');
       }
     };
 
@@ -94,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (data: LoginRequest) => {
     try {
+      console.log('[AUTH] Performing login for:', data.email);
       const response = await authApi.login(data);
       const authData = response.data;
       const userObj = authData.user || authData;
@@ -104,14 +122,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       await AsyncStorage.setItem('userData', JSON.stringify(userObj));
 
+      console.log('[AUTH] Login successful for:', userObj.email);
       setUser(userObj);
     } catch (e) {
+      console.error('[AUTH] Login error:', e);
       throw e;
     }
   };
 
   const register = async (data: RegisterRequest) => {
     try {
+      console.log('[AUTH] Performing registration for:', data.email);
       const response = await authApi.register(data);
       const authData = response.data;
       const userObj = authData.user || authData;
@@ -122,13 +143,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       await AsyncStorage.setItem('userData', JSON.stringify(userObj));
 
+      console.log('[AUTH] Registration successful for:', userObj.email);
       setUser(userObj);
     } catch (e) {
+      console.error('[AUTH] Registration error:', e);
       throw e;
     }
   };
 
   const logout = async () => {
+    console.log('[AUTH] Logging out user...');
     try {
       // 1. Terminate any active voice recording and audio playback
       await audioInputService.stopCapture().catch(() => {});
@@ -140,8 +164,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 3. Clear local storage tokens & cached state
       await clearAuthStorage();
       setUser(null);
+      console.log('[AUTH] Logged out successfully -> Navigating to Welcome');
     } catch (e) {
-      console.error('[AuthContext] Logout error:', e);
+      console.error('[AUTH] Logout error:', e);
       // Ensure state is cleared regardless of network error
       await clearAuthStorage();
       setUser(null);
@@ -156,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await AsyncStorage.setItem('userData', JSON.stringify(meRes.data.user));
       }
     } catch (e) {
-      console.warn('[AuthContext] Could not refresh user:', e);
+      console.warn('[AUTH] Could not refresh user:', e);
     }
   };
 
@@ -193,11 +218,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteAccount = async (password?: string) => {
     try {
+      console.log('[AUTH] Deleting account...');
       await audioInputService.stopCapture().catch(() => {});
       await audioOutputService.stop().catch(() => {});
       await authApi.deleteAccount(password);
       await clearAuthStorage(true);
       setUser(null);
+      console.log('[AUTH] Account deleted -> Navigating to Welcome');
     } catch (e) {
       throw e;
     }
