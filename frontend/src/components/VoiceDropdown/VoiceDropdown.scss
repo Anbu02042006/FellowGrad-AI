@@ -1,0 +1,114 @@
+$background: #050814;
+$surface: rgba(18, 25, 48, 0.85);
+$surfaceElevated: rgba(10, 16, 36, 0.96);
+$primary: #3B82F6;
+$text: #FFFFFF;
+$textSecondary: #94A3B8;
+$textMuted: #64748B;
+$border: rgba(99, 140, 255, 0.28);
+$borderHighlight: rgba(99, 140, 255, 0.45);
+$selectedBg: rgba(59, 130, 246, 0.18);
+
+.container {
+  position: relative;
+  align-items: center;
+}
+
+.dropdownButton {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(20, 28, 54, 0.85);
+  border-width: 1.2px;
+  border-color: $border;
+  border-radius: 18px;
+  padding-horizontal: 14px;
+  padding-vertical: 7px;
+  shadow-color: #3B82F6;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.25;
+  shadow-radius: 8px;
+  elevation: 3;
+}
+
+.dropdownButtonActive {
+  border-color: $borderHighlight;
+  background-color: rgba(30, 42, 78, 0.9);
+}
+
+.labelPrefix {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: $textSecondary;
+  letter-spacing: -0.2px;
+}
+
+.labelVoiceName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-left: 2px;
+  letter-spacing: -0.2px;
+}
+
+.arrowIcon {
+  font-size: 11px;
+  color: #60A5FA;
+  margin-left: 5px;
+  margin-top: 1px;
+}
+
+.modalOverlay {
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 56px;
+}
+
+.dropdownMenu {
+  min-width: 180px;
+  max-width: 220px;
+  background-color: $surfaceElevated;
+  border-width: 1.2px;
+  border-color: rgba(99, 140, 255, 0.35);
+  border-radius: 14px;
+  padding: 6px;
+  shadow-color: #000;
+  shadow-offset: 0 8px;
+  shadow-opacity: 0.55;
+  shadow-radius: 16px;
+  elevation: 14;
+}
+
+.voiceItem {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-vertical: 9px;
+  padding-horizontal: 12px;
+  border-radius: 9px;
+  margin-vertical: 2px;
+}
+
+.voiceItemActive {
+  background-color: $selectedBg;
+}
+
+.voiceName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #E2E8F0;
+}
+
+.voiceNameActive {
+  color: #38BDF8;
+  font-weight: 600;
+}
+
+.checkmark {
+  font-size: 13px;
+  font-weight: 700;
+  color: #38BDF8;
+  margin-left: 10px;
+}

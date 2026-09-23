@@ -567,31 +567,37 @@ ${dialogueText}
   }
 
   /**
-   * Build complete system instruction string including persona and personal memory
-   * @param {string} userId
-   * @param {string} [conversationId]
-   */
   /**
    * Build complete system instruction string including persona and personal memory
    * @param {string} userId
    * @param {string} [conversationId]
+   * @param {string} [voice]
    */
-  static async buildLiveSystemInstruction(userId, conversationId = null) {
-    const basePrompt = geminiLiveConfig.systemPrompt;
+  static async buildLiveSystemInstruction(userId, conversationId = null, voice = 'Aoede') {
+    const basePrompt = typeof geminiLiveConfig.getSystemPromptForVoice === 'function'
+      ? geminiLiveConfig.getSystemPromptForVoice(voice)
+      : geminiLiveConfig.systemPrompt;
     const { compactContext } = await this.getUserContext(userId, conversationId);
 
     if (!compactContext) {
       return basePrompt;
     }
 
-    return `${basePrompt}\n\n${compactContext}\nUse this context naturally to personalize your spoken responses to the student. Never disclose or recite raw memory items unless relevant to what the student is talking about.`;
+    return `${basePrompt}\n\n${compactContext}\nUse this context naturally to personalize your spoken responses to the user. Never disclose or recite raw memory items unless relevant to what the user is talking about.`;
   }
 
   /**
    * Build system instruction specifically for Incognito sessions (no personal memory injected)
+   * @param {string} [voice]
    */
-  static buildIncognitoSystemInstruction() {
-    return `${geminiLiveConfig.systemPrompt}\n\n--- INCOGNITO SESSION ACTIVE ---\nThis is an ephemeral, private incognito session. You are Maya, FellowGrad's education-focused personal AI companion. Focus strictly on education, studies, and student support. Answer questions naturally and conversationally. Do not attempt to save, reference past personal records, or persist any conversation details.`;
+  static buildIncognitoSystemInstruction(voice = 'Aoede') {
+    const basePrompt = typeof geminiLiveConfig.getSystemPromptForVoice === 'function'
+      ? geminiLiveConfig.getSystemPromptForVoice(voice)
+      : geminiLiveConfig.systemPrompt;
+    const identity = (geminiLiveConfig.VOICE_IDENTITY_MAP && geminiLiveConfig.VOICE_IDENTITY_MAP[voice])
+      ? geminiLiveConfig.VOICE_IDENTITY_MAP[voice].displayName
+      : 'Nila';
+    return `${basePrompt}\n\n--- INCOGNITO SESSION ACTIVE ---\nThis is an ephemeral, private incognito session. You are ${identity}, the user's personal assistant. Answer questions naturally and conversationally. Do not attempt to save, reference past personal records, or persist any conversation details.`;
   }
 }
 

@@ -1,14 +1,16 @@
 $background: #070913;
-$surface: #121528;
-$surfaceElevated: #1A1E38;
-$surfaceSelected: #1E2248;
+$surface: #0E1326;
+$surfaceElevated: #161D36;
+$surfaceSelected: #1D264F;
 $text: #FFFFFF;
-$textSecondary: #9496A1;
-$border: #232742;
-$borderSelected: #7F56D9;
-$primary: #6C63FF;
-$primaryLight: #9E77ED;
-$success: #12B76A;
+$textSecondary: #94A3B8;
+$textMuted: #64748B;
+$border: rgba(255, 255, 255, 0.08);
+$borderSelected: #3B82F6;
+$primary: #3B82F6;
+$primaryLight: #60A5FA;
+$success: #10B981;
+$purpleAccent: #A855F7;
 
 .overlay {
   flex: 1;
@@ -21,192 +23,285 @@ $success: #12B76A;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(5, 7, 15, 0.75);
+  background-color: rgba(3, 5, 12, 0.8);
 }
 
 .modalContainer {
   background-color: $surface;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  padding-horizontal: 22px;
-  padding-bottom: 40px;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  padding-horizontal: 20px;
+  padding-bottom: 32px;
   max-height: 85%;
-  border-top-width: 1px;
-  border-top-color: rgba(255, 255, 255, 0.1);
+  border-top-width: 1.5px;
+  border-top-color: rgba(255, 255, 255, 0.12);
   shadow-color: #000;
-  shadow-offset: 0 -4px;
-  shadow-opacity: 0.4;
-  shadow-radius: 12px;
-  elevation: 20;
+  shadow-offset: 0 -8px;
+  shadow-opacity: 0.55;
+  shadow-radius: 20px;
+  elevation: 24;
 }
 
 .handleContainer {
-  padding-vertical: 14px;
+  padding-vertical: 12px;
   width: 100%;
   align-items: center;
 }
 
 .handle {
   width: 44px;
-  height: 4px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  height: 4.5px;
+  background-color: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
 }
 
 .header {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-top: 4px;
+  margin-bottom: 16px;
+  padding-top: 2px;
 }
 
 .title {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   color: $text;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
 }
 
 .subtitle {
   font-size: 13px;
   color: $textSecondary;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .closeButton {
-  width: 34px;
-  height: 34px;
-  border-radius: 17px;
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
   background-color: rgba(255, 255, 255, 0.08);
   justify-content: center;
   align-items: center;
   border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .closeText {
-  color: $textSecondary;
-  font-size: 14px;
+  color: #FFFFFF;
+  font-size: 15px;
   font-weight: 600;
 }
 
-.voiceList {
-  margin-bottom: 4px;
+// Filter Tabs
+.filterTabsRow {
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 8px;
+}
+
+.filterTab {
+  padding-horizontal: 14px;
+  padding-vertical: 7px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.filterTabActive {
+  background-color: rgba(59, 130, 246, 0.2);
+  border-color: #3B82F6;
+}
+
+.filterTabText {
+  color: $textSecondary;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.filterTabTextActive {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+// Carousel
+.carouselContainer {
+  margin-vertical: 4px;
+}
+
+.horizontalScrollContent {
+  padding-vertical: 8px;
+  padding-horizontal: 4px;
+  gap: 14px;
 }
 
 .voiceCard {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
   background-color: $surfaceElevated;
   border-width: 1.5px;
   border-color: $border;
-  border-radius: 18px;
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 24px;
+  padding: 18px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 290px;
 }
 
 .voiceCardSelected {
   background-color: $surfaceSelected;
   border-color: $borderSelected;
-  shadow-color: $borderSelected;
+  shadow-color: #3B82F6;
   shadow-offset: 0 0;
-  shadow-opacity: 0.3;
-  shadow-radius: 8px;
-  elevation: 6;
+  shadow-opacity: 0.45;
+  shadow-radius: 14px;
+  elevation: 10;
 }
 
-.voiceLeft {
+.cardHeaderRow {
+  width: 100%;
   flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  flex: 1;
+  margin-bottom: 12px;
 }
 
-.avatarCircle {
-  width: 46px;
-  height: 46px;
-  border-radius: 23px;
+.genderTag {
   background-color: rgba(255, 255, 255, 0.06);
-  justify-content: center;
-  align-items: center;
-  margin-right: 14px;
+  padding-horizontal: 10px;
+  padding-vertical: 4px;
+  border-radius: 12px;
   border-width: 1px;
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-.avatarCircleSelected {
-  background-color: rgba(127, 86, 217, 0.22);
-  border-color: rgba(158, 119, 237, 0.4);
-}
-
-.avatarIcon {
-  font-size: 22px;
-}
-
-.voiceInfo {
-  flex: 1;
-}
-
-.voiceNameRow {
-  flex-direction: row;
-  align-items: center;
-}
-
-.voiceLabel {
-  font-size: 16px;
-  font-weight: 700;
-  color: $text;
-  margin-right: 8px;
-  letter-spacing: -0.2px;
-}
-
-.voiceLabelSelected {
-  color: #FFFFFF;
+.genderTagText {
+  color: #CBD5E1;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .defaultBadge {
-  background-color: rgba(18, 183, 106, 0.16);
+  background-color: rgba(16, 185, 129, 0.16);
   border-width: 1px;
   border-color: $success;
-  border-radius: 6px;
-  padding-horizontal: 6px;
-  padding-vertical: 2px;
+  border-radius: 10px;
+  padding-horizontal: 8px;
+  padding-vertical: 3px;
 }
 
 .defaultBadgeText {
   color: $success;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
+}
+
+.avatarCircle {
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
+  background-color: rgba(255, 255, 255, 0.06);
+  justify-content: center;
+  align-items: center;
+  margin-vertical: 10px;
+  border-width: 1.5px;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.avatarCircleSelected {
+  background-color: rgba(59, 130, 246, 0.22);
+  border-color: #60A5FA;
+  shadow-color: #3B82F6;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.6;
+  shadow-radius: 12px;
+  elevation: 8;
+}
+
+.avatarIcon {
+  font-size: 34px;
+}
+
+.voiceName {
+  font-size: 22px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.4px;
+  margin-top: 4px;
+}
+
+.voiceNameSelected {
+  color: #93C5FD;
 }
 
 .voiceSubtitle {
   font-size: 13px;
-  color: $textSecondary;
-  margin-top: 3px;
-  font-weight: 500;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-top: 4px;
+  text-align: center;
 }
 
-.radioCircle {
-  width: 24px;
-  height: 24px;
-  border-radius: 12px;
-  border-width: 2px;
-  border-color: rgba(255, 255, 255, 0.25);
-  justify-content: center;
+.voiceDescription {
+  font-size: 11.5px;
+  color: #64748B;
+  text-align: center;
+  margin-top: 6px;
+  line-height: 16px;
+  padding-horizontal: 8px;
+}
+
+.selectBadge {
+  margin-top: 16px;
+  width: 100%;
+  padding-vertical: 9px;
+  border-radius: 16px;
   align-items: center;
-  margin-left: 12px;
+  justify-content: center;
 }
 
-.radioCircleSelected {
-  border-color: $primaryLight;
-  background-color: transparent;
+.selectBadgeActive {
+  background-color: #2563EB;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.25);
+  shadow-color: #3B82F6;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.5;
+  shadow-radius: 8px;
+  elevation: 4;
 }
 
-.radioInnerDot {
-  width: 12px;
-  height: 12px;
-  border-radius: 6px;
-  background-color: $primaryLight;
+.selectBadgeInactive {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.selectBadgeText {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.selectBadgeTextActive {
+  color: #FFFFFF;
+}
+
+.selectBadgeTextInactive {
+  color: #94A3B8;
+}
+
+.swipeHintContainer {
+  align-items: center;
+  padding-top: 12px;
+}
+
+.swipeHintText {
+  color: $textMuted;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }

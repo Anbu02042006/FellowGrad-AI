@@ -4,8 +4,9 @@
  */
 
 export interface VoiceOption {
-  id: string; // Gemini prebuilt voiceName: 'Puck' | 'Charon' | 'Aoede' | 'Kore'
-  label: string; // User-facing title: 'Male Voice 1', 'Male Voice 2', etc.
+  id: string; // Gemini technical prebuilt voiceName: 'Aoede' | 'Kore' | 'Puck' | 'Charon'
+  displayName: string; // User-facing identity name: 'Nila' | 'Yazhi' | 'Viyan' | 'Aran'
+  label: string; // Compatible with existing UI components
   name: string; // Prebuilt voice identifier
   gender: 'male' | 'female';
   icon: string; // Display emoji
@@ -16,41 +17,45 @@ export interface VoiceOption {
 
 export const VOICES: VoiceOption[] = [
   {
-    id: 'Puck',
-    label: 'Puck',
-    name: 'Puck',
-    gender: 'male',
-    icon: '✨',
-    subtitle: 'Upbeat & energetic',
-    description: 'Upbeat & energetic tone for active discussions',
-  },
-  {
-    id: 'Charon',
-    label: 'Charon',
-    name: 'Charon',
-    gender: 'male',
-    icon: '🎙️',
-    subtitle: 'Deep & calm',
-    description: 'Deep, calm & reassuring tone for steady focus',
-  },
-  {
     id: 'Aoede',
-    label: 'Aoede',
+    displayName: 'Nila',
+    label: 'Nila',
     name: 'Aoede',
     gender: 'female',
-    icon: '🌸',
+    icon: '🌙',
     subtitle: 'Natural & conversational',
     description: 'Natural & conversational tone (Default)',
     isDefault: true,
   },
   {
     id: 'Kore',
-    label: 'Kore',
+    displayName: 'Yazhi',
+    label: 'Yazhi',
     name: 'Kore',
     gender: 'female',
-    icon: '💫',
+    icon: '🎵',
     subtitle: 'Warm & articulate',
     description: 'Warm, articulate & confident tone',
+  },
+  {
+    id: 'Puck',
+    displayName: 'Viyan',
+    label: 'Viyan',
+    name: 'Puck',
+    gender: 'male',
+    icon: '🚀',
+    subtitle: 'Upbeat & energetic',
+    description: 'Upbeat & energetic tone for active discussions',
+  },
+  {
+    id: 'Charon',
+    displayName: 'Aran',
+    label: 'Aran',
+    name: 'Charon',
+    gender: 'male',
+    icon: '🧠',
+    subtitle: 'Deep & calm',
+    description: 'Deep, calm & reassuring tone for steady focus',
   },
 ];
 

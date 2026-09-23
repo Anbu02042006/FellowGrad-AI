@@ -477,7 +477,7 @@ const runAssistantTests = async () => {
 
     const incognitoPrompt = MemoryService.buildIncognitoSystemInstruction();
     assert('Incognito system instruction contains ephemeral notice', incognitoPrompt.includes('INCOGNITO SESSION ACTIVE'));
-    assert('Incognito system instruction contains Maya persona', incognitoPrompt.includes('Maya'));
+    assert('Incognito system instruction contains personal assistant persona', incognitoPrompt.includes('personal assistant') && incognitoPrompt.includes('Nila'));
 
     console.log('\n=============================================================');
     console.log(`📊 Assistant Test Suite Results: ${passed} Passed, ${failed} Failed`);

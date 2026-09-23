@@ -1,0 +1,89 @@
+$listeningColor: #38BDF8;
+$speakingColor: #818CF8;
+$listeningGlow: rgba(56, 189, 248, 0.4);
+$speakingGlow: rgba(129, 140, 248, 0.5);
+
+.container {
+  align-items: center;
+  justify-content: center;
+  padding-vertical: 8px;
+}
+
+.statusRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.wavySymbol {
+  font-size: 15px;
+  font-weight: 700;
+  margin-horizontal: 4px;
+}
+
+.wavySymbolListening {
+  color: $listeningColor;
+  text-shadow-color: $listeningGlow;
+  text-shadow-offset: 0 0;
+  text-shadow-radius: 8px;
+}
+
+.wavySymbolSpeaking {
+  color: $speakingColor;
+  text-shadow-color: $speakingGlow;
+  text-shadow-offset: 0 0;
+  text-shadow-radius: 10px;
+}
+
+.barsContainer {
+  flex-direction: row;
+  align-items: center;
+  height: 20px;
+  margin-horizontal: 3px;
+}
+
+.waveBar {
+  width: 2.5px;
+  height: 18px;
+  border-radius: 1.5px;
+  margin-horizontal: 1.5px;
+}
+
+.waveBarListening {
+  background-color: $listeningColor;
+  shadow-color: $listeningColor;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.8;
+  shadow-radius: 4px;
+  elevation: 2;
+}
+
+.waveBarSpeaking {
+  background-color: $speakingColor;
+  shadow-color: $speakingColor;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.9;
+  shadow-radius: 6px;
+  elevation: 3;
+}
+
+.statusText {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-horizontal: 6px;
+}
+
+.statusTextListening {
+  color: $listeningColor;
+  text-shadow-color: $listeningGlow;
+  text-shadow-offset: 0 0;
+  text-shadow-radius: 8px;
+}
+
+.statusTextSpeaking {
+  color: $speakingColor;
+  text-shadow-color: $speakingGlow;
+  text-shadow-offset: 0 0;
+  text-shadow-radius: 10px;
+}

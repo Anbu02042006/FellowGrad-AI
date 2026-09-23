@@ -2,15 +2,14 @@ $background: #050814;
 $surface: rgba(18, 25, 48, 0.75);
 $surfaceElevated: rgba(22, 32, 60, 0.85);
 $primary: #3B82F6;
-$primaryGradientStart: #3B67F0;
-$primaryGradientEnd: #7C3AED;
 $text: #FFFFFF;
 $textSecondary: #94A3B8;
 $textMuted: #64748B;
 $border: rgba(255, 255, 255, 0.1);
 $borderHighlight: rgba(99, 140, 255, 0.35);
-$success: #10B981;
 $error: #F43F5E;
+$errorBorder: rgba(244, 63, 94, 0.35);
+$errorBg: rgba(244, 63, 94, 0.12);
 $incognitoPurple: #A855F7;
 
 .container {
@@ -32,94 +31,59 @@ $incognitoPurple: #A855F7;
 .contentWrapper {
   flex: 1;
   z-index: 1;
+  width: 100%;
+  max-width: 520px;
+  align-self: center;
   justify-content: space-between;
 }
 
 // --------------------------------------------------
-// TOP HEADER
+// TOP HEADER: Profile + Voice Selector + Incognito
 // --------------------------------------------------
 .topHeader {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   padding-horizontal: 20px;
-  padding-top: 8px;
-  padding-bottom: 6px;
+  padding-top: 14px;
+  padding-bottom: 8px;
+  z-index: 10;
 }
 
 .profileButton {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   justify-content: center;
   align-items: center;
 }
 
 .avatarCircle {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  background-color: #2563EB;
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  background-color: rgba(30, 41, 74, 0.85);
   justify-content: center;
   align-items: center;
   border-width: 1.5px;
-  border-color: rgba(255, 255, 255, 0.25);
-  shadow-color: #2563EB;
+  border-color: rgba(255, 255, 255, 0.16);
+  shadow-color: #3B82F6;
   shadow-offset: 0 0;
-  shadow-opacity: 0.55;
-  shadow-radius: 10px;
-  elevation: 6;
+  shadow-opacity: 0.3;
+  shadow-radius: 6px;
+  elevation: 4;
 }
 
 .avatarInitial {
   color: #FFFFFF;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
 
-.greetingContainer {
-  flex: 1;
-  align-items: center;
-  padding-horizontal: 8px;
-}
-
-.greetingTitleRow {
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-
-.greetingTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FFFFFF;
-  letter-spacing: -0.3px;
-}
-
-.greetingName {
-  font-size: 18px;
-  font-weight: 700;
-  color: #38BDF8;
-  letter-spacing: -0.3px;
-}
-
-.greetingEmoji {
-  font-size: 16px;
-  margin-left: 4px;
-}
-
-.greetingSubtitle {
-  font-size: 12px;
-  color: $textSecondary;
-  margin-top: 3px;
-  font-weight: 500;
-  letter-spacing: 0.1px;
-}
-
 .shieldHeaderButton {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
+  width: 42px;
+  height: 42px;
+  border-radius: 21px;
   background-color: rgba(20, 28, 52, 0.85);
   justify-content: center;
   align-items: center;
@@ -129,379 +93,85 @@ $incognitoPurple: #A855F7;
 }
 
 .shieldHeaderButtonActive {
-  border-color: rgba(168, 85, 247, 0.6);
-  background-color: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.8);
+  background-color: rgba(168, 85, 247, 0.25);
+  shadow-color: #A855F7;
+  shadow-offset: 0 0;
+  shadow-opacity: 0.6;
+  shadow-radius: 10px;
+  elevation: 6;
 }
 
-.shieldDot {
+.incognitoDot {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 9px;
-  height: 9px;
-  border-radius: 4.5px;
-  background-color: $success;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #C084FC;
   border-width: 1.5px;
   border-color: #050814;
 }
 
 // --------------------------------------------------
-// QUICK ACTION PROMPT CARDS (4-GRID ROW)
-// --------------------------------------------------
-.quickCardsContainer {
-  flex-direction: row;
-  justify-content: space-between;
-  padding-horizontal: 16px;
-  margin-top: 14px;
-  margin-bottom: 6px;
-}
-
-.quickCard {
-  flex: 1;
-  margin-horizontal: 3.5px;
-  padding-vertical: 12px;
-  padding-horizontal: 4px;
-  border-radius: 14px;
-  background-color: rgba(18, 25, 46, 0.7);
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.08);
-  align-items: center;
-  justify-content: center;
-  min-height: 84px;
-}
-
-.quickCardIconContainer {
-  width: 34px;
-  height: 34px;
-  border-radius: 17px;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.quickCardIcon {
-  font-size: 18px;
-}
-
-.quickCardLabel {
-  font-size: 11px;
-  font-weight: 600;
-  color: #CBD5E1;
-  text-align: center;
-  line-height: 14px;
-  letter-spacing: -0.1px;
-}
-
-// --------------------------------------------------
-// NOTICE BANNER
-// --------------------------------------------------
-.noticeBanner {
-  margin-horizontal: 20px;
-  margin-top: 6px;
-  padding-vertical: 8px;
-  padding-horizontal: 14px;
-  border-radius: 12px;
-  background-color: rgba(168, 85, 247, 0.16);
-  border-width: 1px;
-  border-color: rgba(168, 85, 247, 0.35);
-  align-items: center;
-}
-
-.noticeText {
-  color: #E9D7FE;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-}
-
-// --------------------------------------------------
-// CENTER STAGE
+// CENTER STAGE: ORB + Status + Timer + Stop
 // --------------------------------------------------
 .centerStage {
   flex: 1;
   justify-content: center;
   align-items: center;
-  margin-vertical: 10px;
+  padding-horizontal: 24px;
+  padding-vertical: 16px;
 }
 
 .orbWrapper {
+  align-items: center;
+  justify-content: center;
+}
+
+// Active session controls directly below ORB
+.activeSessionControls {
+  align-items: center;
+  justify-content: center;
+  margin-top: 24px;
+  min-height: 120px;
+}
+
+.timerText {
+  font-size: 17px;
+  font-weight: 600;
+  color: $textSecondary;
+  letter-spacing: 1.2px;
+  margin-top: 6px;
   margin-bottom: 18px;
 }
 
-.statusContainer {
-  align-items: center;
-}
-
-.agentName {
-  font-size: 28px;
-  font-weight: 700;
-  color: #FFFFFF;
-  letter-spacing: -0.5px;
-  margin-bottom: 12px;
-}
-
-// Gradient Capsule Status Pill
-.gradientStatusPill {
+.stopButton {
   flex-direction: row;
   align-items: center;
-  padding-horizontal: 18px;
+  justify-content: center;
+  padding-horizontal: 26px;
   padding-vertical: 9px;
-  border-radius: 22px;
-  background-color: #4338CA;
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.25);
-  shadow-color: #6366F1;
-  shadow-offset: 0 0;
-  shadow-opacity: 0.55;
-  shadow-radius: 12px;
-  elevation: 8;
-  margin-bottom: 10px;
-}
-
-.gradientStatusPillSpeaking {
-  background-color: #7C3AED;
-  shadow-color: #8B5CF6;
-}
-
-.gradientStatusPillListening {
-  background-color: #3B67F0;
-  shadow-color: #60A5FA;
-}
-
-.statusWaveIcon {
-  margin-right: 8px;
-}
-
-.statusPillText {
-  font-size: 14px;
-  color: #FFFFFF;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
-.promptSubtitleLine1 {
-  font-size: 13.5px;
-  color: $textSecondary;
-  font-weight: 500;
-  text-align: center;
-  letter-spacing: 0.1px;
-}
-
-.promptSubtitleLine2 {
-  font-size: 13px;
-  color: $textSecondary;
-  font-weight: 400;
-  text-align: center;
-  margin-top: 2px;
-  letter-spacing: 0.1px;
-}
-
-// Active Call Duration Badge
-.timerBadge {
-  flex-direction: row;
-  align-items: center;
-  background-color: rgba(18, 25, 46, 0.85);
-  padding-horizontal: 14px;
-  padding-vertical: 6px;
-  border-radius: 18px;
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.12);
-  margin-top: 14px;
-}
-
-.timerDot {
-  width: 7.5px;
-  height: 7.5px;
-  border-radius: 4px;
-  background-color: $error;
-  margin-right: 8px;
+  border-radius: 20px;
+  background-color: $errorBg;
+  border-width: 1.2px;
+  border-color: $errorBorder;
   shadow-color: $error;
   shadow-offset: 0 0;
-  shadow-opacity: 0.9;
-  shadow-radius: 6px;
+  shadow-opacity: 0.25;
+  shadow-radius: 8px;
   elevation: 4;
 }
 
-.timerValue {
-  color: #FFFFFF;
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-// --------------------------------------------------
-// BOTTOM ACTION BAR (FLOATING DOCK)
-// --------------------------------------------------
-.bottomBar {
-  padding-horizontal: 20px;
-  padding-bottom: 24px;
-  align-items: center;
-}
-
-.controlsRow {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 390px;
-}
-
-// Voice Selector Pill (Left)
-.voiceSelectorPill {
-  flex-direction: row;
-  align-items: center;
-  background-color: rgba(20, 28, 54, 0.85);
-  padding-horizontal: 14px;
-  padding-vertical: 11px;
-  border-radius: 26px;
-  border-width: 1.2px;
-  border-color: rgba(255, 255, 255, 0.12);
-  min-width: 106px;
-  justify-content: center;
-}
-
-.voiceIcon {
-  font-size: 15px;
-  margin-right: 6px;
-}
-
-.voiceLabel {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #FFFFFF;
-  margin-right: 5px;
-  letter-spacing: -0.2px;
-}
-
-.voiceChevron {
-  font-size: 11px;
-  color: $textSecondary;
-}
-
-// Center Large Glowing Call / End Button
-.micButtonWrapper {
-  width: 88px;
-  height: 88px;
-  justify-content: center;
-  align-items: center;
-}
-
-.micOuterRing {
-  position: absolute;
-  width: 88px;
-  height: 88px;
-  border-radius: 44px;
-  background-color: rgba(244, 63, 94, 0.18);
-  border-width: 1.5px;
-  border-color: rgba(244, 63, 94, 0.35);
-}
-
-.micOuterRingInactive {
-  background-color: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.micButton {
-  width: 72px;
-  height: 72px;
-  border-radius: 36px;
-  background-color: #2563EB;
-  justify-content: center;
-  align-items: center;
-  shadow-color: #2563EB;
-  shadow-offset: 0 0;
-  shadow-opacity: 0.75;
-  shadow-radius: 18px;
-  elevation: 12;
-  border-width: 2px;
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.micButtonActive {
-  background-color: $error;
-  shadow-color: $error;
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
-.micIcon {
-  font-size: 28px;
-  color: #FFFFFF;
-}
-
-.micIconActive {
-  font-size: 26px;
-  font-weight: 700;
-  color: #FFFFFF;
-}
-
-// Private Pill with Switch (Right)
-.privatePill {
-  flex-direction: row;
-  align-items: center;
-  background-color: rgba(20, 28, 54, 0.85);
-  padding-horizontal: 14px;
-  padding-vertical: 10px;
-  border-radius: 26px;
-  border-width: 1.2px;
-  border-color: rgba(255, 255, 255, 0.12);
-  min-width: 110px;
-  justify-content: space-between;
-}
-
-.privatePillActive {
-  border-color: rgba(168, 85, 247, 0.45);
-  background-color: rgba(24, 28, 58, 0.9);
-}
-
-.privatePillLeft {
-  flex-direction: row;
-  align-items: center;
-  margin-right: 8px;
-}
-
-.privateIcon {
-  font-size: 14px;
-  margin-right: 6px;
-}
-
-.privateLabel {
-  font-size: 13.5px;
+.stopButtonText {
+  color: #F87171;
+  font-size: 14.5px;
   font-weight: 600;
-  color: #FFFFFF;
-  letter-spacing: -0.2px;
+  letter-spacing: 0.4px;
 }
 
-.privateLabelActive {
-  color: #E9D7FE;
-  font-weight: 700;
-}
-
-// Mini Toggle Switch
-.miniSwitch {
-  width: 32px;
-  height: 18px;
-  border-radius: 9px;
-  background-color: #334155;
-  padding: 2px;
-  justify-content: center;
-}
-
-.miniSwitchActive {
-  background-color: $success;
-}
-
-.miniSwitchThumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
-  background-color: #FFFFFF;
-  shadow-color: #000000;
-  shadow-offset: 0 1px;
-  shadow-opacity: 0.3;
-  shadow-radius: 2px;
-  elevation: 2;
-}
-
-.miniSwitchThumbActive {
-  align-self: flex-end;
+// Subtle bottom spacer for balanced vertical centering
+.bottomSpacer {
+  height: 32px;
 }

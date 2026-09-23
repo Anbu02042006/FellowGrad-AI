@@ -81,9 +81,11 @@ const setupLiveVoiceSocket = (httpServer) => {
       // 2. Load personalized companion memory & system instruction (or base instruction if incognito)
       const systemInstruction = isIncognito
         ? MemoryService.buildIncognitoSystemInstruction
-          ? MemoryService.buildIncognitoSystemInstruction()
-          : 'You are Maya, a modern, helpful, friendly personal AI assistant. Be concise, engaging, and speak naturally.'
-        : await MemoryService.buildLiveSystemInstruction(userId, conversationId);
+          ? MemoryService.buildIncognitoSystemInstruction(voice)
+          : (typeof geminiLiveConfig.getSystemPromptForVoice === 'function'
+              ? geminiLiveConfig.getSystemPromptForVoice(voice)
+              : geminiLiveConfig.systemPrompt)
+        : await MemoryService.buildLiveSystemInstruction(userId, conversationId, voice);
 
       // Notify mobile client that session setup is starting
       ws.send(JSON.stringify({

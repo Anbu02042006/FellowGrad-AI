@@ -16,9 +16,13 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
   const outerRippleOpacity1 = useRef(new Animated.Value(0)).current;
   const outerRippleAnim2 = useRef(new Animated.Value(1)).current;
   const outerRippleOpacity2 = useRef(new Animated.Value(0)).current;
+  const outerRippleAnim3 = useRef(new Animated.Value(1)).current;
+  const outerRippleOpacity3 = useRef(new Animated.Value(0)).current;
+  const micWaveScale = useRef(new Animated.Value(1)).current;
+  const micWaveOpacity = useRef(new Animated.Value(0.8)).current;
   const rotationAnim1 = useRef(new Animated.Value(0)).current;
   const rotationAnim2 = useRef(new Animated.Value(0)).current;
-  const stardustAnim = useRef(new Animated.Value(0.4)).current;
+  const stardustAnim = useRef(new Animated.Value(0.5)).current;
 
   // Active composite animation reference for clean teardown
   const currentAnimation = useRef<Animated.CompositeAnimation | null>(null);
@@ -32,18 +36,18 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
     rotationAnim1.setValue(0);
     rotationAnim2.setValue(0);
 
-    // Continuous stardust shimmer
+    // Continuous stardust shimmer (lightweight native loop)
     Animated.loop(
       Animated.sequence([
         Animated.timing(stardustAnim, {
           toValue: 0.9,
-          duration: 1800,
+          duration: 2000,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(stardustAnim, {
-          toValue: 0.35,
-          duration: 1800,
+          toValue: 0.4,
+          duration: 2000,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -54,7 +58,7 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
     Animated.loop(
       Animated.timing(rotationAnim1, {
         toValue: 1,
-        duration: 18000,
+        duration: 20000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -63,7 +67,7 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
     Animated.loop(
       Animated.timing(rotationAnim2, {
         toValue: 1,
-        duration: 24000,
+        duration: 26000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -71,32 +75,59 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
 
     switch (state) {
       case AssistantState.LISTENING: {
+        // Active fluid circular wave movement
         const listeningLoop = Animated.loop(
           Animated.parallel([
             Animated.sequence([
               Animated.timing(pulseAnim, {
                 toValue: 1.12,
-                duration: 900,
+                duration: 800,
                 easing: Easing.inOut(Easing.ease),
                 useNativeDriver: true,
               }),
               Animated.timing(pulseAnim, {
                 toValue: 0.98,
-                duration: 900,
+                duration: 800,
                 easing: Easing.inOut(Easing.ease),
                 useNativeDriver: true,
               }),
             ]),
             Animated.sequence([
+              Animated.timing(micWaveScale, {
+                toValue: 1.25,
+                duration: 800,
+                easing: Easing.out(Easing.ease),
+                useNativeDriver: true,
+              }),
+              Animated.timing(micWaveScale, {
+                toValue: 1.0,
+                duration: 800,
+                easing: Easing.in(Easing.ease),
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.sequence([
+              Animated.timing(micWaveOpacity, {
+                toValue: 1.0,
+                duration: 800,
+                useNativeDriver: true,
+              }),
+              Animated.timing(micWaveOpacity, {
+                toValue: 0.6,
+                duration: 800,
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.sequence([
               Animated.timing(glowAnim, {
-                toValue: 0.9,
-                duration: 900,
+                toValue: 0.88,
+                duration: 800,
                 easing: Easing.inOut(Easing.ease),
                 useNativeDriver: true,
               }),
               Animated.timing(glowAnim, {
                 toValue: 0.5,
-                duration: 900,
+                duration: 800,
                 easing: Easing.inOut(Easing.ease),
                 useNativeDriver: true,
               }),
@@ -105,25 +136,54 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
             Animated.sequence([
               Animated.parallel([
                 Animated.timing(outerRippleAnim1, {
-                  toValue: 1.5,
-                  duration: 1800,
+                  toValue: 1.45,
+                  duration: 1600,
                   easing: Easing.out(Easing.quad),
                   useNativeDriver: true,
                 }),
                 Animated.sequence([
                   Animated.timing(outerRippleOpacity1, {
                     toValue: 0.5,
-                    duration: 400,
+                    duration: 350,
                     useNativeDriver: true,
                   }),
                   Animated.timing(outerRippleOpacity1, {
                     toValue: 0,
-                    duration: 1400,
+                    duration: 1250,
                     useNativeDriver: true,
                   }),
                 ]),
               ]),
               Animated.timing(outerRippleAnim1, {
+                toValue: 1.0,
+                duration: 0,
+                useNativeDriver: true,
+              }),
+            ]),
+            // Staggered Ripple wave 2
+            Animated.sequence([
+              Animated.delay(400),
+              Animated.parallel([
+                Animated.timing(outerRippleAnim2, {
+                  toValue: 1.35,
+                  duration: 1600,
+                  easing: Easing.out(Easing.quad),
+                  useNativeDriver: true,
+                }),
+                Animated.sequence([
+                  Animated.timing(outerRippleOpacity2, {
+                    toValue: 0.4,
+                    duration: 350,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(outerRippleOpacity2, {
+                    toValue: 0,
+                    duration: 1250,
+                    useNativeDriver: true,
+                  }),
+                ]),
+              ]),
+              Animated.timing(outerRippleAnim2, {
                 toValue: 1.0,
                 duration: 0,
                 useNativeDriver: true,
@@ -138,34 +198,53 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
 
       case AssistantState.THINKING:
       case AssistantState.PROCESSING: {
+        // Soft rotating / processing effect
         const thinkingLoop = Animated.loop(
           Animated.parallel([
             Animated.sequence([
               Animated.timing(pulseAnim, {
                 toValue: 1.08,
-                duration: 1100,
+                duration: 900,
                 easing: Easing.inOut(Easing.sin),
                 useNativeDriver: true,
               }),
               Animated.timing(pulseAnim, {
                 toValue: 0.94,
-                duration: 1100,
+                duration: 900,
                 easing: Easing.inOut(Easing.sin),
                 useNativeDriver: true,
               }),
             ]),
             Animated.sequence([
-              Animated.timing(glowAnim, {
-                toValue: 0.85,
-                duration: 1100,
+              Animated.timing(micWaveScale, {
+                toValue: 1.15,
+                duration: 900,
                 useNativeDriver: true,
               }),
-              Animated.timing(glowAnim, {
-                toValue: 0.45,
-                duration: 1100,
+              Animated.timing(micWaveScale, {
+                toValue: 0.92,
+                duration: 900,
                 useNativeDriver: true,
               }),
             ]),
+            Animated.sequence([
+              Animated.timing(glowAnim, {
+                toValue: 0.9,
+                duration: 900,
+                useNativeDriver: true,
+              }),
+              Animated.timing(glowAnim, {
+                toValue: 0.4,
+                duration: 900,
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.timing(rotationAnim1, {
+              toValue: 1,
+              duration: 3500,
+              easing: Easing.linear,
+              useNativeDriver: true,
+            }),
           ])
         );
         currentAnimation.current = thinkingLoop;
@@ -174,63 +253,88 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
       }
 
       case AssistantState.SPEAKING: {
+        // Stronger dynamic audio waves
         const speakingLoop = Animated.loop(
           Animated.parallel([
             Animated.sequence([
               Animated.timing(pulseAnim, {
                 toValue: 1.20,
-                duration: 380,
+                duration: 360,
                 easing: Easing.out(Easing.quad),
                 useNativeDriver: true,
               }),
               Animated.timing(pulseAnim, {
                 toValue: 0.96,
-                duration: 360,
+                duration: 340,
                 easing: Easing.in(Easing.quad),
                 useNativeDriver: true,
               }),
               Animated.timing(pulseAnim, {
-                toValue: 1.15,
-                duration: 380,
+                toValue: 1.14,
+                duration: 360,
                 easing: Easing.out(Easing.quad),
                 useNativeDriver: true,
               }),
               Animated.timing(pulseAnim, {
                 toValue: 1.0,
-                duration: 380,
+                duration: 360,
                 easing: Easing.inOut(Easing.quad),
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.sequence([
+              Animated.timing(micWaveScale, {
+                toValue: 1.35,
+                duration: 360,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.timing(micWaveScale, {
+                toValue: 0.9,
+                duration: 340,
+                useNativeDriver: true,
+              }),
+              Animated.timing(micWaveScale, {
+                toValue: 1.25,
+                duration: 360,
+                useNativeDriver: true,
+              }),
+              Animated.timing(micWaveScale, {
+                toValue: 1.0,
+                duration: 360,
                 useNativeDriver: true,
               }),
             ]),
             Animated.sequence([
               Animated.timing(glowAnim, {
                 toValue: 1.0,
-                duration: 380,
+                duration: 360,
                 useNativeDriver: true,
               }),
               Animated.timing(glowAnim, {
                 toValue: 0.55,
-                duration: 360,
+                duration: 340,
                 useNativeDriver: true,
               }),
             ]),
+            // Outer dynamic ripple 1
             Animated.sequence([
               Animated.parallel([
                 Animated.timing(outerRippleAnim1, {
                   toValue: 1.65,
-                  duration: 800,
+                  duration: 750,
                   easing: Easing.out(Easing.cubic),
                   useNativeDriver: true,
                 }),
                 Animated.sequence([
                   Animated.timing(outerRippleOpacity1, {
-                    toValue: 0.55,
-                    duration: 200,
+                    toValue: 0.6,
+                    duration: 180,
                     useNativeDriver: true,
                   }),
                   Animated.timing(outerRippleOpacity1, {
                     toValue: 0,
-                    duration: 600,
+                    duration: 570,
                     useNativeDriver: true,
                   }),
                 ]),
@@ -241,29 +345,59 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
                 useNativeDriver: true,
               }),
             ]),
+            // Outer dynamic ripple 2
             Animated.sequence([
-              Animated.delay(350),
+              Animated.delay(280),
               Animated.parallel([
                 Animated.timing(outerRippleAnim2, {
                   toValue: 1.5,
-                  duration: 800,
+                  duration: 750,
                   easing: Easing.out(Easing.cubic),
                   useNativeDriver: true,
                 }),
                 Animated.sequence([
                   Animated.timing(outerRippleOpacity2, {
-                    toValue: 0.45,
-                    duration: 200,
+                    toValue: 0.5,
+                    duration: 180,
                     useNativeDriver: true,
                   }),
                   Animated.timing(outerRippleOpacity2, {
                     toValue: 0,
-                    duration: 600,
+                    duration: 570,
                     useNativeDriver: true,
                   }),
                 ]),
               ]),
               Animated.timing(outerRippleAnim2, {
+                toValue: 1.0,
+                duration: 0,
+                useNativeDriver: true,
+              }),
+            ]),
+            // Outer dynamic ripple 3
+            Animated.sequence([
+              Animated.delay(450),
+              Animated.parallel([
+                Animated.timing(outerRippleAnim3, {
+                  toValue: 1.4,
+                  duration: 750,
+                  easing: Easing.out(Easing.cubic),
+                  useNativeDriver: true,
+                }),
+                Animated.sequence([
+                  Animated.timing(outerRippleOpacity3, {
+                    toValue: 0.4,
+                    duration: 180,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(outerRippleOpacity3, {
+                    toValue: 0,
+                    duration: 570,
+                    useNativeDriver: true,
+                  }),
+                ]),
+              ]),
+              Animated.timing(outerRippleAnim3, {
                 toValue: 1.0,
                 duration: 0,
                 useNativeDriver: true,
@@ -281,13 +415,13 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
           Animated.sequence([
             Animated.timing(glowAnim, {
               toValue: 0.8,
-              duration: 550,
+              duration: 500,
               easing: Easing.inOut(Easing.ease),
               useNativeDriver: true,
             }),
             Animated.timing(glowAnim, {
-              toValue: 0.25,
-              duration: 550,
+              toValue: 0.3,
+              duration: 500,
               easing: Easing.inOut(Easing.ease),
               useNativeDriver: true,
             }),
@@ -300,6 +434,7 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
 
       case AssistantState.IDLE:
       default: {
+        // Subtle slow breathing and fluid circular ripple
         const idleLoop = Animated.loop(
           Animated.parallel([
             Animated.sequence([
@@ -317,6 +452,20 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
               }),
             ]),
             Animated.sequence([
+              Animated.timing(micWaveScale, {
+                toValue: 1.08,
+                duration: 2400,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(micWaveScale, {
+                toValue: 0.96,
+                duration: 2400,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.sequence([
               Animated.timing(glowAnim, {
                 toValue: 0.65,
                 duration: 2400,
@@ -327,6 +476,34 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
                 toValue: 0.35,
                 duration: 2400,
                 easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+            // Subtle slow idle ripple
+            Animated.sequence([
+              Animated.parallel([
+                Animated.timing(outerRippleAnim1, {
+                  toValue: 1.3,
+                  duration: 2800,
+                  easing: Easing.out(Easing.sin),
+                  useNativeDriver: true,
+                }),
+                Animated.sequence([
+                  Animated.timing(outerRippleOpacity1, {
+                    toValue: 0.25,
+                    duration: 600,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(outerRippleOpacity1, {
+                    toValue: 0,
+                    duration: 2200,
+                    useNativeDriver: true,
+                  }),
+                ]),
+              ]),
+              Animated.timing(outerRippleAnim1, {
+                toValue: 1.0,
+                duration: 0,
                 useNativeDriver: true,
               }),
             ]),
@@ -385,9 +562,9 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
       style={styles.container}
       accessible={true}
       accessibilityRole="image"
-      accessibilityLabel={`Maya AI Companion, state is ${state.toLowerCase()}${isIncognito ? ', incognito mode' : ''}`}
+      accessibilityLabel={`AI Voice Assistant, state is ${state.toLowerCase()}${isIncognito ? ', incognito mode' : ''}`}
     >
-      {/* Outer Soundwave Ripple 1 */}
+      {/* Outer Soundwave Ripple Layer 1 */}
       <Animated.View
         style={[
           styles.outerRipple,
@@ -400,7 +577,7 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
         ]}
       />
 
-      {/* Outer Soundwave Ripple 2 */}
+      {/* Outer Soundwave Ripple Layer 2 */}
       <Animated.View
         style={[
           styles.outerRipple,
@@ -409,6 +586,19 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
             borderColor: primaryGradientColors.stop1,
             opacity: outerRippleOpacity2,
             transform: [{ scale: outerRippleAnim2 }],
+          },
+        ]}
+      />
+
+      {/* Outer Soundwave Ripple Layer 3 */}
+      <Animated.View
+        style={[
+          styles.outerRipple,
+          {
+            backgroundColor: rippleColor,
+            borderColor: secondaryGradientColors.stop1,
+            opacity: outerRippleOpacity3,
+            transform: [{ scale: outerRippleAnim3 }],
           },
         ]}
       />
@@ -465,7 +655,6 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
               <Stop offset="100%" stopColor={secondaryGradientColors.stop3} stopOpacity="0.1" />
             </LinearGradient>
           </Defs>
-          {/* Organic flowing curved flower petal shapes */}
           <Path
             d="M 110 20 C 145 20, 160 55, 185 75 C 210 95, 205 130, 190 155 C 175 180, 145 195, 110 200 C 75 195, 45 180, 30 155 C 15 130, 10 95, 35 75 C 60 55, 75 20, 110 20 Z"
             fill="url(#orbGrad1)"
@@ -490,7 +679,6 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
               <Stop offset="100%" stopColor={primaryGradientColors.stop3} stopOpacity="0.2" />
             </LinearGradient>
           </Defs>
-          {/* Interlocking organic petal flower shape */}
           <Path
             d="M 100 15 C 130 15, 150 45, 170 65 C 190 85, 190 120, 175 145 C 160 170, 130 185, 100 185 C 70 185, 40 170, 25 145 C 10 120, 10 85, 30 65 C 50 45, 70 15, 100 15 Z"
             fill="url(#orbGrad2)"
@@ -520,24 +708,67 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ state, isIncognito = false }
           <Circle cx="75" cy="75" r="70" fill="url(#innerCoreGrad)" />
         </Svg>
 
-        {/* Center Microphone Vector Icon */}
-        <View style={styles.micCenterIcon}>
-          <Svg width="38" height="38" viewBox="0 0 24 24" fill="none">
-            {/* Microphone Capsule */}
+        {/* Dynamic Center Microphone & Smooth Audio Wave Rings */}
+        <Animated.View
+          style={[
+            styles.micCenterIcon,
+            {
+              transform: [{ scale: micWaveScale }],
+              opacity: micWaveOpacity,
+            },
+          ]}
+        >
+          <Svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            {/* Concentric Smooth Soundwave Brackets */}
+            {/* Outer Left Sound Wave */}
             <Path
-              d="M12 2C10.34 2 9 3.34 9 5V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V5C15 3.34 13.66 2 12 2Z"
+              d="M 11 18 C 7 24, 7 32, 11 38"
+              stroke="#FFFFFF"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              opacity="0.6"
+            />
+            {/* Inner Left Sound Wave */}
+            <Path
+              d="M 16 22 C 14 26, 14 30, 16 34"
+              stroke="#FFFFFF"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              opacity="0.85"
+            />
+
+            {/* Inner Right Sound Wave */}
+            <Path
+              d="M 40 22 C 42 26, 42 30, 40 34"
+              stroke="#FFFFFF"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              opacity="0.85"
+            />
+            {/* Outer Right Sound Wave */}
+            <Path
+              d="M 45 18 C 49 24, 49 32, 45 38"
+              stroke="#FFFFFF"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              opacity="0.6"
+            />
+
+            {/* Microphone Center Capsule */}
+            <Path
+              d="M 28 17 C 25.8 17, 24 18.8, 24 21 V 28 C 24 30.2, 25.8 32, 28 32 C 30.2 32, 32 30.2, 32 28 V 21 C 32 18.8, 30.2 17, 28 17 Z"
               fill="#FFFFFF"
             />
-            {/* Microphone Pickup Arc */}
+            {/* Microphone Pickup Arc & Base */}
             <Path
-              d="M19 10V12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12V10M12 19V22M8 22H16"
+              d="M 35 26 V 28 C 35 31.87, 31.87 35, 28 35 C 24.13 35, 21 28, 21 28 V 26 M 28 35 V 39 M 23 39 H 33"
               stroke="#FFFFFF"
-              strokeWidth="2"
+              strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           </Svg>
-        </View>
+        </Animated.View>
       </Animated.View>
     </View>
   );
