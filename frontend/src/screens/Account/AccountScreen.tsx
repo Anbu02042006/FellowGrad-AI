@@ -249,7 +249,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>ACADEMIC PROFILE</Text>
           <Text style={styles.sectionDescription}>
-            Maya uses your academic profile to naturally calibrate explanations, placement prep, and study tips.
+            Your assistant uses your background profile to naturally calibrate explanations, project ideas, and advice.
           </Text>
 
           <View style={styles.inputGroup}>

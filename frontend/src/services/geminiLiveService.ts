@@ -1,6 +1,7 @@
 import voiceApi from './api/voiceApi';
 import audioInputService from './audioInputService';
 import audioOutputService from './audioOutputService';
+import reminderService from './reminderService';
 import { getWsBaseUrl } from '../config/apiConfig';
 
 export type LiveAssistantState =
@@ -22,6 +23,7 @@ export interface LiveSessionCallbacks {
     isComplete: boolean;
   }) => void;
   onInterrupted?: () => void;
+  onReminderAction?: (action: any) => void;
 }
 
 export class GeminiLiveService {
@@ -304,6 +306,18 @@ export class GeminiLiveService {
                   isComplete: parsed.isComplete || false,
                 });
               }
+              break;
+
+            // ------------------------------------------------------
+            // Reminder actions (Schedule / Cancel from voice assistant)
+            // ------------------------------------------------------
+
+            case 'reminder_action':
+              console.log('[GeminiLive] Received reminder_action:', parsed);
+              reminderService.handleSocketReminderAction(parsed).catch((err) => {
+                console.error('[GeminiLive] Error handling reminder_action:', err);
+              });
+              this.callbacks?.onReminderAction?.(parsed);
               break;
 
             // ------------------------------------------------------

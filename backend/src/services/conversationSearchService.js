@@ -53,7 +53,7 @@ class ConversationSearchService {
 
     // Extract topic keywords by removing stop words and question phrases
     const stopWords = new Set([
-      'maya', 'fellowgrad', 'what', 'did', 'i', 'we', 'you', 'tell', 'say', 'talk', 'about',
+      'maya', 'nila', 'yazhi', 'viyan', 'aran', 'fellowgrad', 'what', 'did', 'i', 'we', 'you', 'tell', 'say', 'talk', 'about',
       'discuss', 'mention', 'remember', 'recall', 'that', 'the', 'a', 'an', 'in', 'on', 'at',
       'to', 'for', 'with', 'from', 'my', 'me', 'our', 'something', 'thing', 'was', 'is', 'it',
       'can', 'could', 'please', 'yesterday', 'ago', 'days', 'two', 'three', 'week', 'last',

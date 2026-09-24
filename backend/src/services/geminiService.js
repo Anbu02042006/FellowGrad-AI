@@ -11,20 +11,17 @@ class GeminiService {
   static async getAiResponse(userMessage) {
     const { apiKey, model, baseUrl, systemPrompt } = geminiConfig;
 
-    // Check education scope & retrieve grounded context
+    // Check education scope & retrieve grounded context if educational
     const eduResult = await EducationSearchService.retrieveContext(userMessage);
-    if (!eduResult.isEducation && eduResult.redirectMessage) {
-      return eduResult.redirectMessage;
-    }
 
     if (!apiKey) {
-      console.warn('[GeminiService] GEMINI_API_KEY is not set. Returning default companion message.');
-      return `Hi there! I am FellowGrad, your education and student companion. How can I help with your studies, colleges, courses, or admissions today? (Note: Set GEMINI_API_KEY in .env to activate live Gemini AI responses).`;
+      console.warn('[GeminiService] GEMINI_API_KEY is not set. Returning default personal assistant message.');
+      return `Hi there! I am your personal AI assistant. How can I help you today? (Note: Set GEMINI_API_KEY in .env to activate live Gemini AI responses).`;
     }
 
     const url = `${baseUrl}${model}:generateContent`;
 
-    const effectivePrompt = eduResult.groundedContext
+    const effectivePrompt = (eduResult && eduResult.isEducation && eduResult.groundedContext)
       ? `${systemPrompt}\n\n${eduResult.groundedContext}`
       : systemPrompt;
 
@@ -96,8 +93,8 @@ class GeminiService {
         }
       }
 
-      console.warn('[GeminiService] Gemini API unreachable or model not found, using companion fallback reply:', err.message);
-      return `I'm here for you! To prepare effectively for your goals, focus on structured practice, building core problem-solving intuition, and keeping a positive mindset. How else can I help?`;
+      console.warn('[GeminiService] Gemini API unreachable or model not found, using assistant fallback reply:', err.message);
+      return `I'm here to help you! How can I assist you with your tasks or questions today?`;
     }
   }
 }

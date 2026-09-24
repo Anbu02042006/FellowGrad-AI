@@ -121,7 +121,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           <View style={styles.header}>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
-              Sign in to continue speaking with Maya and access your academic companion.
+              Sign in to continue speaking with your personal assistant.
             </Text>
           </View>
 

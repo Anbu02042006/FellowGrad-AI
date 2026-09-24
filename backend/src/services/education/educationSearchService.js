@@ -27,13 +27,13 @@ class EducationSearchService {
   static async retrieveContext(query, userContext = null) {
     const analysis = EducationIntentService.analyzeQuery(query);
 
-    // Non-education query -> Return standard polite redirect
+    // Non-education query -> Return non-education status with no grounding restriction
     if (!analysis.isEducation) {
       return {
         isEducation: false,
         intent: INTENT_CATEGORIES.NON_EDUCATION,
-        groundedContext: `[STRICT NON-EDUCATION REDIRECT RULE]\nThe user asked an off-topic question ("${query}"). FellowGrad is strictly an education companion. Do NOT answer the non-education question. Politeness rule: Respond briefly with:\n"${analysis.redirectMessage}"`,
-        redirectMessage: analysis.redirectMessage,
+        groundedContext: null,
+        redirectMessage: null,
         sourceUrls: [],
       };
     }

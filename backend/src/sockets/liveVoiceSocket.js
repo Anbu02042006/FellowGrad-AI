@@ -13,6 +13,8 @@ const MemoryService = require('../services/memoryService');
 const ConversationService = require('../services/conversationService');
 const ConversationSearchService = require('../services/conversationSearchService');
 const EducationSearchService = require('../services/education/educationSearchService');
+const { ReminderIntentService, INTENT_TYPES } = require('../services/reminderIntentService');
+const { ReminderService } = require('../services/reminderService');
 const geminiLiveConfig = require('../config/geminiLive');
 
 const JWT_SECRET = process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970';
@@ -62,6 +64,7 @@ const setupLiveVoiceSocket = (httpServer) => {
       sessionId = decoded.sessionId;
       const isIncognito = Boolean(decoded.incognito);
       conversationId = isIncognito ? null : decoded.conversationId;
+      const clientTimezone = parsedUrl.searchParams.get('timezone') || decoded.timezone || 'Asia/Kolkata';
 
       const voice = (decoded.voice && geminiLiveConfig.ALLOWED_VOICES.includes(decoded.voice))
         ? decoded.voice
@@ -142,7 +145,124 @@ const setupLiveVoiceSocket = (httpServer) => {
                   console.warn(`[VoiceSession] Education retrieval note: ${eduErr.message}`);
                 });
 
-              // 2. Persist user message & historical recall (Strictly bypassed in Incognito mode)
+              // 2. Live Reminder Intent & Action Layer
+              try {
+                const reminderAnalysis = ReminderIntentService.analyze(content, {
+                  timezone: clientTimezone,
+                  now: new Date(),
+                });
+
+                if (reminderAnalysis.isReminder) {
+                  if (isIncognito) {
+                    console.log(`[VoiceSession] Incognito reminder intent detected: ${reminderAnalysis.intent}`);
+                    if (liveSession && liveSession.isConnected) {
+                      liveSession.sendTextMessage(
+                        `[INCOGNITO REMINDER INSTRUCTION]\nIncognito mode is on, so this reminder won't be saved permanently. State clearly to the user: "Incognito mode is on, so this reminder won't be saved permanently. Do you still want me to schedule it for this session?"`
+                      );
+                    }
+                  } else if (reminderAnalysis.needsClarification) {
+                    console.log(`[VoiceSession] Reminder needs clarification: ${reminderAnalysis.clarificationPrompt}`);
+                    if (liveSession && liveSession.isConnected) {
+                      liveSession.sendTextMessage(
+                        `[REMINDER CLARIFICATION NEEDED]\nThe user asked for a reminder without specifying an exact time. Ask concisely: "${reminderAnalysis.clarificationPrompt}"`
+                      );
+                    }
+                  } else if (reminderAnalysis.isPastTime) {
+                    console.log(`[VoiceSession] Reminder time has already passed: ${reminderAnalysis.pastTimePrompt}`);
+                    if (liveSession && liveSession.isConnected) {
+                      liveSession.sendTextMessage(
+                        `[REMINDER PAST TIME DETECTED]\nThe requested time has already passed today. Ask concisely: "${reminderAnalysis.pastTimePrompt}"`
+                      );
+                    }
+                  } else if (reminderAnalysis.intent === INTENT_TYPES.CREATE_REMINDER && userId) {
+                    ReminderService.createReminder(userId, {
+                      title: reminderAnalysis.title,
+                      scheduledAt: reminderAnalysis.scheduledAt,
+                      timezone: reminderAnalysis.timezone,
+                      recurrence: reminderAnalysis.recurrence,
+                    })
+                      .then((createdReminder) => {
+                        console.log(`[VoiceSession] Reminder created for ${userId}: "${createdReminder.title}" at ${createdReminder.scheduledAt}`);
+                        if (ws.readyState === WebSocket.OPEN) {
+                          ws.send(JSON.stringify({
+                            type: 'reminder_action',
+                            action: 'SCHEDULE',
+                            reminder: createdReminder,
+                          }));
+                        }
+                        if (liveSession && liveSession.isConnected) {
+                          liveSession.sendTextMessage(
+                            `[REMINDER SCHEDULED SUCCESSFULLY]\nTitle: "${createdReminder.title}", ScheduledAt: "${createdReminder.scheduledAt}". Confirm concisely to the user: "Sure, I'll remind you tomorrow at 8 AM to ${createdReminder.title}."`
+                          );
+                        }
+                      })
+                      .catch((remErr) => {
+                        console.error(`[VoiceSession] Failed to create reminder: ${remErr.message}`);
+                      });
+                  } else if (reminderAnalysis.intent === INTENT_TYPES.CANCEL_REMINDER && userId) {
+                    if (reminderAnalysis.all) {
+                      ReminderService.cancelAllReminders(userId)
+                        .then(() => {
+                          if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                              type: 'reminder_action',
+                              action: 'CANCEL_ALL',
+                            }));
+                          }
+                          if (liveSession && liveSession.isConnected) {
+                            liveSession.sendTextMessage(`[ALL REMINDERS CANCELLED]\nConfirm concisely: "I've cancelled all your reminders."`);
+                          }
+                        });
+                    } else {
+                      ReminderService.findMatchingReminder(userId, reminderAnalysis.targetQuery)
+                        .then((match) => {
+                          if (match) {
+                            return ReminderService.cancelReminder(userId, match.id).then(() => {
+                              if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({
+                                  type: 'reminder_action',
+                                  action: 'CANCEL',
+                                  reminderId: match.id,
+                                  notificationId: match.notificationId,
+                                }));
+                              }
+                              if (liveSession && liveSession.isConnected) {
+                                liveSession.sendTextMessage(`[REMINDER CANCELLED]\nCancelled reminder: "${match.title}". Confirm concisely: "Cancelled your ${match.title} reminder."`);
+                              }
+                            });
+                          } else {
+                            if (liveSession && liveSession.isConnected) {
+                              liveSession.sendTextMessage(`[REMINDER NOT FOUND]\nCould not find a reminder matching "${reminderAnalysis.targetQuery || ''}". Inform the user concisely.`);
+                            }
+                          }
+                        });
+                    }
+                  } else if (reminderAnalysis.intent === INTENT_TYPES.LIST_REMINDERS && userId) {
+                    ReminderService.getReminders(userId, { status: 'SCHEDULED' })
+                      .then((activeReminders) => {
+                        if (ws.readyState === WebSocket.OPEN) {
+                          ws.send(JSON.stringify({
+                            type: 'reminders_list',
+                            count: activeReminders.length,
+                            reminders: activeReminders,
+                          }));
+                        }
+                        if (liveSession && liveSession.isConnected) {
+                          if (activeReminders.length === 0) {
+                            liveSession.sendTextMessage(`[USER REMINDERS LIST]\nUser has 0 scheduled reminders. Inform user concisely: "You don't have any scheduled reminders right now."`);
+                          } else {
+                            const summary = activeReminders.map((r) => `"${r.title}" at ${r.scheduledAt}`).join(', ');
+                            liveSession.sendTextMessage(`[USER REMINDERS LIST]\nScheduled reminders: ${summary}. Summarize them concisely in voice.`);
+                          }
+                        }
+                      });
+                  }
+                }
+              } catch (remAnalyzeErr) {
+                console.warn(`[VoiceSession] Reminder intent processing note: ${remAnalyzeErr.message}`);
+              }
+
+              // 3. Persist user message & historical recall (Strictly bypassed in Incognito mode)
               if (!isIncognito && conversationId && userId) {
                 ConversationService.saveUserMessage(userId, conversationId, content, 'voice').catch((err) => {
                   console.warn(`[Conversation] Could not persist user message: ${err.message}`);

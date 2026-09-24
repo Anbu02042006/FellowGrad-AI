@@ -136,7 +136,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
-              Set up your profile to start voice conversations with your AI companion.
+              Set up your profile to start voice conversations with your personal assistant.
             </Text>
           </View>
 

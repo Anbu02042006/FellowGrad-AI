@@ -221,28 +221,24 @@ async function runEducationTestSuite() {
     assert.ok(result.groundedContext.includes('2026-27 TAMIL NADU ADMISSIONS OVERVIEW'));
   });
 
-  // Test 12: "weather in Coimbatore" (Strict non-education redirection)
-  await test('12. "weather in Coimbatore" triggers strict education-only redirection', async () => {
+  // Test 12: "weather in Coimbatore" (General personal assistant support without blocking)
+  await test('12. "weather in Coimbatore" is recognized as general question and unblocked for personal assistant', async () => {
     const query = 'weather in Coimbatore';
     const analysis = EducationIntentService.analyzeQuery(query);
-    assert.strictEqual(analysis.isEducation, false, 'Weather must NOT be treated as education');
+    assert.strictEqual(analysis.isEducation, false, 'Weather is a general domain topic');
     assert.strictEqual(analysis.intent, INTENT_CATEGORIES.NON_EDUCATION);
-    assert.ok(analysis.redirectMessage, 'Must provide redirection message');
-    assert.ok(
-      analysis.redirectMessage.includes("I'm focused on education and student-related support"),
-      'Must contain standard redirection phrase'
-    );
 
     const result = await EducationSearchService.retrieveContext(query);
     assert.strictEqual(result.isEducation, false);
-    assert.ok(result.groundedContext.includes('[STRICT NON-EDUCATION REDIRECT RULE]'));
+    // FellowGrad behaves as a general personal AI assistant; no blocking redirect rule is injected
+    assert.strictEqual(result.groundedContext, null);
   });
 
   // --------------------------------------------------------------------------
   console.log('\n--- Phase 2: Edge Cases, Policies & Source Integrity ---');
   // --------------------------------------------------------------------------
 
-  await test('13. Other non-education queries (stocks, gossip, cricket, shopping) are rejected', () => {
+  await test('13. Other general queries (stocks, gossip, cricket, shopping) are classified without blocking', () => {
     const offTopicQueries = [
       'Who won yesterday IPL cricket match?',
       'Tell me today stock trading tips',
@@ -252,7 +248,7 @@ async function runEducationTestSuite() {
 
     for (const q of offTopicQueries) {
       const a = EducationIntentService.analyzeQuery(q);
-      assert.strictEqual(a.isEducation, false, `"${q}" should be non-education`);
+      assert.strictEqual(a.isEducation, false, `"${q}" should be classified as general/non-education`);
       assert.strictEqual(a.intent, INTENT_CATEGORIES.NON_EDUCATION);
     }
   });
@@ -330,8 +326,78 @@ async function runEducationTestSuite() {
     }
   });
 
+  // --------------------------------------------------------------------------
+  console.log('\n--- Phase 3: General Personal AI Assistant & Voice Identities ---');
+  // --------------------------------------------------------------------------
+
+  const geminiLiveConfig = require('../src/config/geminiLive');
+
+  // Test 20: Voice identity mapping for Puck / Viyan
+  await test('20. Puck maps to Viyan with proper personal assistant identity', () => {
+    const prompt = geminiLiveConfig.getSystemPromptForVoice('Puck');
+    assert.ok(prompt.includes("You are Viyan, the user's personal AI assistant") || prompt.includes("You are Viyan"));
+    assert.ok(prompt.includes("Your current name is Viyan"));
+    assert.ok(prompt.includes("I'm Viyan."));
+    assert.ok(prompt.includes("I'm Viyan, your personal assistant."));
+    assert.ok(!prompt.includes('You are Maya'));
+  });
+
+  // Test 21: Voice identity mapping for Charon / Aran
+  await test('21. Charon maps to Aran with proper personal assistant identity', () => {
+    const prompt = geminiLiveConfig.getSystemPromptForVoice('Charon');
+    assert.ok(prompt.includes("You are Aran, the user's personal AI assistant") || prompt.includes("You are Aran"));
+    assert.ok(prompt.includes("Your current name is Aran"));
+    assert.ok(prompt.includes("I'm Aran."));
+    assert.ok(prompt.includes("I'm Aran, your personal assistant."));
+    assert.ok(!prompt.includes('You are Maya'));
+  });
+
+  // Test 22: Voice identity mapping for Aoede / Nila
+  await test('22. Aoede maps to Nila with proper personal assistant identity', () => {
+    const prompt = geminiLiveConfig.getSystemPromptForVoice('Aoede');
+    assert.ok(prompt.includes("You are Nila, the user's personal AI assistant") || prompt.includes("You are Nila"));
+    assert.ok(prompt.includes("Your current name is Nila"));
+    assert.ok(prompt.includes("I'm Nila."));
+    assert.ok(prompt.includes("I'm Nila, your personal assistant."));
+    assert.ok(!prompt.includes('You are Maya'));
+  });
+
+  // Test 23: Voice identity mapping for Kore / Yazhi
+  await test('23. Kore maps to Yazhi with proper personal assistant identity', () => {
+    const prompt = geminiLiveConfig.getSystemPromptForVoice('Kore');
+    assert.ok(prompt.includes("You are Yazhi, the user's personal AI assistant") || prompt.includes("You are Yazhi"));
+    assert.ok(prompt.includes("Your current name is Yazhi"));
+    assert.ok(prompt.includes("I'm Yazhi."));
+    assert.ok(prompt.includes("I'm Yazhi, your personal assistant."));
+    assert.ok(!prompt.includes('You are Maya'));
+  });
+
+  // Test 24: General Question Handling across multiple domains
+  await test('24. Section 22 General Questions are answered without education-only restriction', async () => {
+    const testQuestions = [
+      { q: 'Explain Java inheritance.', domain: 'programming/education' },
+      { q: "What's the weather today?", domain: 'general knowledge/daily' },
+      { q: 'Write a professional email.', domain: 'writing/productivity' },
+      { q: 'How does a CPU work?', domain: 'technology' },
+      { q: 'Plan my day.', domain: 'personal planning' },
+      { q: 'Tell me about Coimbatore colleges.', domain: 'education' },
+      { q: 'What did I tell you yesterday?', domain: 'historical recall' },
+      { q: 'Help me debug this code.', domain: 'coding' },
+    ];
+
+    for (const item of testQuestions) {
+      const res = await EducationSearchService.retrieveContext(item.q);
+      // None of the queries should have a blocking redirect rule
+      if (!res.isEducation) {
+        assert.strictEqual(res.groundedContext, null, `Query "${item.q}" must not inject blocking redirect`);
+      } else {
+        assert.ok(res.isEducation, `Educational query "${item.q}" is properly recognized`);
+      }
+    }
+  });
+
   console.log('\n=============================================================');
-  console.log(`📊 Education Companion Test Results: ${passed} Passed, ${failed} Failed`);
+  console.log(`📊 Education & Personal Assistant Test Results: ${passed} Passed, ${failed} Failed`);
   console.log('=============================================================\n');
 
   if (failed > 0) {

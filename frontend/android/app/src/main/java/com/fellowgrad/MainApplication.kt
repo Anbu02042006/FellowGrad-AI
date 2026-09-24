@@ -16,6 +16,7 @@ class MainApplication : Application(), ReactApplication {
         PackageList(this).packages.apply {
           add(SpeechRecognizerPackage())
           add(AudioStreamPackage())
+          add(com.fellowgrad.reminder.ReminderPackage())
         },
     )
   }

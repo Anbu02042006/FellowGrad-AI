@@ -107,7 +107,7 @@ class GeminiLiveSession {
               text:
                 this.systemInstruction ||
                 `
-You are FellowGrad AI, a helpful personal academic companion.
+You are the user's personal AI assistant. Powered by FellowGrad AI.
 
 Speak naturally and concisely.
 Listen carefully to the user's voice.

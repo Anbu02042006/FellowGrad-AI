@@ -26,16 +26,16 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
         <View style={styles.brandContainer}>
           <Text style={styles.brandTitle}>FellowGrad AI</Text>
           <Text style={styles.tagline}>
-            Your personal academic & emotional companion.
+            Your personal AI assistant.
           </Text>
         </View>
 
-        {/* Central Ambient Maya Orb Visual */}
+        {/* Central Ambient Orb Visual */}
         <View style={styles.orbContainer}>
           <View style={styles.orbOuterRing}>
             <View style={styles.orbMiddleRing}>
               <View style={styles.orbCore}>
-                <Text style={styles.mayaAvatarText}>✨</Text>
+                <Text style={styles.avatarEmojiText}>✨</Text>
               </View>
             </View>
           </View>
@@ -45,7 +45,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
         {/* Value Proposition Description */}
         <View style={styles.descriptionContainer}>
           <Text style={styles.descriptionText}>
-            Speak naturally with Maya, brainstorm course concepts, prepare for placement interviews, and navigate college life through continuous real-time voice.
+            Speak naturally, brainstorm concepts, prepare for interviews, plan your day, and get answers to whatever you ask through continuous real-time voice.
           </Text>
         </View>
 

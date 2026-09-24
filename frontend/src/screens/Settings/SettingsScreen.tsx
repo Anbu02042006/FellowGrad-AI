@@ -129,7 +129,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const handleClearMemories = () => {
     Alert.alert(
       'Clear Long-Term Memories',
-      'Are you sure you want to delete all stored personal memories? Maya will no longer recall them in future conversations.',
+      'Are you sure you want to delete all stored personal memories? Your assistant will no longer recall them in future conversations.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -228,10 +228,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
           <View style={styles.settingRow}>
             <View style={styles.settingLabelGroup}>
-              <Text style={styles.settingTitle}>AI Companion</Text>
-              <Text style={styles.settingSubtitle}>Default Persona</Text>
+              <Text style={styles.settingTitle}>AI Assistant</Text>
+              <Text style={styles.settingSubtitle}>Personal Assistant</Text>
             </View>
-            <Text style={styles.valueBadge}>Maya</Text>
+            <Text style={styles.valueBadge}>{currentVoiceObj.displayName}</Text>
           </View>
 
           <TouchableOpacity
@@ -244,7 +244,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               <Text style={styles.settingSubtitle}>{currentVoiceObj.description}</Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={styles.valueText}>{currentVoiceObj.name}</Text>
+              <Text style={styles.valueText}>{currentVoiceObj.displayName}</Text>
               <Text style={styles.arrow}>❯</Text>
             </View>
           </TouchableOpacity>
@@ -268,7 +268,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             <View style={styles.settingLabelGroup}>
               <Text style={styles.settingTitle}>Memory</Text>
               <Text style={styles.settingSubtitle}>
-                Maya remembers key details across conversations to personalize answers.
+                Your assistant remembers key details across conversations to personalize answers.
               </Text>
             </View>
             <Switch
@@ -342,7 +342,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => Alert.alert('FellowGrad AI', 'FellowGrad AI is your personal academic and emotional companion powered by Gemini Live native audio.')}
+            onPress={() => Alert.alert('FellowGrad AI', 'FellowGrad AI is your personal AI assistant powered by Gemini Live native audio.')}
             activeOpacity={0.7}
           >
             <Text style={styles.actionRowTitle}>About FellowGrad</Text>

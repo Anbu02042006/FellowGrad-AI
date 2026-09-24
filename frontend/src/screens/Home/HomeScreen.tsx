@@ -23,6 +23,7 @@ import {
 } from '../../hooks/useVoiceAssistant';
 import conversationApi from '../../services/api/conversationApi';
 import audioInputService from '../../services/audioInputService';
+import reminderService from '../../services/reminderService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -52,10 +53,16 @@ const HomeScreen = ({ navigation, route }: any) => {
   } = useVoiceAssistant(conversationId);
 
   // --------------------------------------------------
-  // Pre-check Microphone Permission on Screen Mount
+  // Pre-check Microphone Permission & Reminder Setup on Mount
   // --------------------------------------------------
   useEffect(() => {
     audioInputService.prepare().catch(() => {});
+    reminderService.requestNotificationPermission().catch(() => {});
+    reminderService.checkInitialReminderTap().then((initialReminder) => {
+      if (initialReminder) {
+        console.log('[HomeScreen] User opened app via reminder notification:', initialReminder.title);
+      }
+    }).catch(() => {});
   }, []);
 
   // --------------------------------------------------

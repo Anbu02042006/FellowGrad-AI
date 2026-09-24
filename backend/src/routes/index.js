@@ -9,11 +9,13 @@ const voiceRoutes = require('./voiceRoutes');
 const liveVoiceRoutes = require('./liveVoiceRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const memoryRoutes = require('./memoryRoutes');
+const reminderRoutes = require('./reminderRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/conversations', conversationRoutes);
 router.use('/memories', memoryRoutes);
+router.use('/reminders', reminderRoutes);
 router.use('/ai', aiRoutes);
 router.use('/voice/live', liveVoiceRoutes);
 router.use('/voice', voiceRoutes);
