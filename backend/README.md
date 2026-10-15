@@ -19,7 +19,7 @@ fellowgrad-backend/
 │   │   ├── authController.js    # Register, login, token validation
 │   │   ├── userController.js    # User profiles
 │   │   ├── conversationController.js # Conversations & messages
-│   │   ├── aiController.js      # Gemini Chat & ElevenLabs TTS
+│   │   ├── aiController.js      # Gemini Chat & Audio TTS
 │   │   ├── voiceController.js   # Voice STT/TTS & real-time pipeline
 │   │   └── notificationController.js # Real-time user notifications
 │   ├── routes/
@@ -34,8 +34,8 @@ fellowgrad-backend/
 │   │   ├── authService.js       # BCrypt password hashing & JWT handling
 │   │   ├── userService.js       # User profile persistence
 │   │   ├── conversationService.js# Threaded conversations & history
-│   │   ├── geminiService.js     # Google Gemini AI with Google Search grounding
-│   │   ├── voiceService.js      # ElevenLabs TTS & Google Cloud STT
+│   │   ├── geminiService.js     # Google Gemini AI text generation via Vertex AI
+│   │   ├── voiceService.js      # REST Audio fallback & Google Cloud STT
 │   │   └── notificationService.js# Real-time WebSocket emitter
 │   ├── models/
 │   │   ├── User.js              # PostgreSQL _user model

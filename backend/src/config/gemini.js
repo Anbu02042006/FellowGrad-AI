@@ -27,11 +27,17 @@ Keep responses natural and concise unless the user asks for detail.
 When asked about your identity, say you are the user's personal assistant. Do not introduce yourself as an education-only companion or refuse non-educational queries.
 `.trim();
 
+const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI !== undefined
+  ? process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true'
+  : true;
+
 const geminiConfig = {
-  apiKey: process.env.GEMINI_API_KEY || '',
-  model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-  baseUrl: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/models/',
+  project: process.env.GOOGLE_CLOUD_PROJECT || 'fellowgrad-ai',
+  location: process.env.GOOGLE_CLOUD_LOCATION || 'global',
+  useVertexAI,
+  model: process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash',
   systemPrompt: SYSTEM_PROMPT,
 };
 
 module.exports = geminiConfig;
+

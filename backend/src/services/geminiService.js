@@ -1,102 +1,96 @@
-const axios = require('axios');
+const { GoogleGenAI } = require('@google/genai');
 const geminiConfig = require('../config/gemini');
 const EducationSearchService = require('./education/educationSearchService');
 
 class GeminiService {
   /**
-   * Request response from Google Gemini API
+   * Request response from Google Gemini via Google Cloud Vertex AI
    * @param {string} userMessage
    * @returns {Promise<string>} AI text reply
    */
   static async getAiResponse(userMessage) {
-    const { apiKey, model, baseUrl, systemPrompt } = geminiConfig;
-
-    // Check education scope & retrieve grounded context if educational
-    const eduResult = await EducationSearchService.retrieveContext(userMessage);
-
-    if (!apiKey) {
-      console.warn('[GeminiService] GEMINI_API_KEY is not set. Returning default personal assistant message.');
-      return `Hi there! I am your personal AI assistant. How can I help you today? (Note: Set GEMINI_API_KEY in .env to activate live Gemini AI responses).`;
+    if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim()) {
+      const err = new Error('Message is required');
+      err.statusCode = 400;
+      throw err;
     }
 
-    const url = `${baseUrl}${model}:generateContent`;
+    const { project, location, useVertexAI, model, systemPrompt } = geminiConfig;
 
-    const effectivePrompt = (eduResult && eduResult.isEducation && eduResult.groundedContext)
-      ? `${systemPrompt}\n\n${eduResult.groundedContext}`
-      : systemPrompt;
+    if (!project) {
+      const err = new Error('GOOGLE_CLOUD_PROJECT is not configured for Vertex AI');
+      err.statusCode = 500;
+      throw err;
+    }
 
-    const requestBody = {
-      systemInstruction: {
-        parts: [{ text: effectivePrompt }],
-      },
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: userMessage }],
-        },
-      ],
-      tools: [
-        {
-          googleSearch: {},
-        },
-      ],
-    };
+    // Check education scope & retrieve grounded context if educational
+    let effectivePrompt = systemPrompt;
+    try {
+      const eduResult = await EducationSearchService.retrieveContext(userMessage);
+      if (eduResult && eduResult.isEducation && eduResult.groundedContext) {
+        effectivePrompt = `${systemPrompt}\n\n${eduResult.groundedContext}`;
+      }
+    } catch (searchErr) {
+      console.warn('[GeminiService] Grounded search context retrieval note:', searchErr.message);
+    }
+
+    const ai = new GoogleGenAI({
+      vertexai: useVertexAI,
+      project,
+      location,
+    });
 
     try {
-      console.log(`[GeminiService] Sending request to ${url} (Model: ${model})`);
+      console.log(`[GeminiService] Requesting Vertex AI text generation (Model: ${model}, Location: ${location})`);
 
-      const response = await axios.post(url, requestBody, {
-        headers: {
-          'x-goog-api-key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
+      // 30-second timeout safety
+      const timeoutPromise = new Promise((_, reject) => {
+        const timer = setTimeout(() => {
+          const timeoutErr = new Error('Vertex AI request timed out after 30000ms');
+          timeoutErr.statusCode = 504;
+          reject(timeoutErr);
+        }, 30000);
+        timer.unref?.();
       });
 
-      const candidate = response.data?.candidates?.[0];
-      const partText = candidate?.content?.parts?.[0]?.text;
+      const generatePromise = ai.models.generateContent({
+        model,
+        contents: userMessage,
+        config: {
+          systemInstruction: effectivePrompt,
+        },
+      });
 
-      if (partText) {
-        return partText;
+      const response = await Promise.race([generatePromise, timeoutPromise]);
+      const replyText = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!replyText || !replyText.trim()) {
+        const emptyErr = new Error('Empty response received from Vertex AI model');
+        emptyErr.statusCode = 502;
+        throw emptyErr;
       }
 
-      return "I'm sorry, I couldn't generate a response right now. How else can I help you?";
+      return replyText;
     } catch (err) {
-      console.error('[GeminiService] Error calling Gemini API:', err.response?.data || err.message);
+      console.error('[GeminiService] Vertex AI text generation error:', err.message);
 
-      // If googleSearch tool is not supported on certain model versions, retry without tools
-      if (err.response?.status === 400 && err.response?.data?.error?.message?.includes('tool')) {
-        try {
-          console.log('[GeminiService] Retrying without search tool...');
-          const retryBody = {
-            systemInstruction: {
-              parts: [{ text: systemPrompt }],
-            },
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: userMessage }],
-              },
-            ],
-          };
-          const retryRes = await axios.post(url, retryBody, {
-            headers: {
-              'x-goog-api-key': apiKey,
-              'Content-Type': 'application/json',
-            },
-            timeout: 30000,
-          });
-          const reply = retryRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply) return reply;
-        } catch (retryErr) {
-          console.error('[GeminiService] Retry failed:', retryErr.message);
+      // Preserve status code if already set (e.g. timeout), else categorize upstream error
+      if (!err.statusCode) {
+        const msg = (err.message || '').toLowerCase();
+        if (msg.includes('not found') || msg.includes('404')) {
+          err.statusCode = 404;
+        } else if (msg.includes('quota') || msg.includes('rate limit') || msg.includes('429')) {
+          err.statusCode = 429;
+        } else if (msg.includes('unauthenticated') || msg.includes('permission') || msg.includes('403') || msg.includes('401')) {
+          err.statusCode = 502;
+        } else {
+          err.statusCode = 502;
         }
       }
-
-      console.warn('[GeminiService] Gemini API unreachable or model not found, using assistant fallback reply:', err.message);
-      return `I'm here to help you! How can I assist you with your tasks or questions today?`;
+      throw err;
     }
   }
 }
 
 module.exports = GeminiService;
+

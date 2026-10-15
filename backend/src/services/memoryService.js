@@ -136,27 +136,58 @@ class MemoryService {
   /**
    * Simple semantic duplicate detection helper
    */
+
+  /**
+   * Duplicate detection that preserves Unicode letters,
+   * including Tamil and other non-Latin scripts.
+   */
   static _isSemanticDuplicate(strA, strB) {
-    if (!strA || !strB) return false;
-    const normA = strA.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-    const normB = strB.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    if (typeof strA !== 'string' || typeof strB !== 'string') {
+      return false;
+    }
+
+    const normalize = (value) =>
+      value
+        .normalize('NFC')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, '')
+        .trim()
+        .replace(/\s+/g, ' ');
+
+    const normA = normalize(strA);
+    const normB = normalize(strB);
+
+    // Empty text must never count as a duplicate.
+    if (!normA || !normB) return false;
 
     if (normA === normB) return true;
-    if (normA.includes(normB) || normB.includes(normA)) return true;
 
-    // Word intersection ratio
-    const wordsA = new Set(normA.split(/\s+/).filter((w) => w.length > 2));
-    const wordsB = new Set(normB.split(/\s+/).filter((w) => w.length > 2));
-    if (wordsA.size === 0 || wordsB.size === 0) return false;
+    if (normA.includes(normB) || normB.includes(normA)) {
+      return true;
+    }
+
+    const wordsA = new Set(
+      normA.split(/\s+/).filter((word) => [...word].length > 2)
+    );
+    const wordsB = new Set(
+      normB.split(/\s+/).filter((word) => [...word].length > 2)
+    );
+
+    if (wordsA.size === 0 || wordsB.size === 0) {
+      return false;
+    }
 
     let overlap = 0;
-    for (const w of wordsA) {
-      if (wordsB.has(w)) overlap++;
+
+    for (const word of wordsA) {
+      if (wordsB.has(word)) overlap++;
     }
 
     const similarity = overlap / Math.min(wordsA.size, wordsB.size);
-    return similarity >= 0.65;
+
+    return similarity >= 0.8;
   }
+
 
   /**
    * Get all memories for a user
@@ -339,10 +370,17 @@ class MemoryService {
     try {
       const { GoogleGenAI } = require('@google/genai');
 
+      const project = process.env.GOOGLE_CLOUD_PROJECT || geminiLiveConfig.project || 'fellowgrad-ai';
+      const location = process.env.GOOGLE_CLOUD_LOCATION || geminiLiveConfig.location || 'global';
+      const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI !== undefined
+        ? process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true'
+        : true;
+      const model = process.env.GEMINI_MEMORY_MODEL || 'gemini-2.5-flash';
+
       const ai = new GoogleGenAI({
-        vertexai: geminiLiveConfig.useEnterprise,
-        project: geminiLiveConfig.project,
-        location: geminiLiveConfig.location,
+        vertexai: useVertexAI,
+        project,
+        location,
       });
 
       const prompt = `
@@ -380,7 +418,7 @@ ${dialogueText}
 `.trim();
 
       const result = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -390,9 +428,38 @@ ${dialogueText}
       const responseText = result?.text || result?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!responseText) return [];
 
-      const parsed = JSON.parse(responseText);
-      return Array.isArray(parsed.memories) ? parsed.memories : [];
+      let parsed;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn(`[MemoryService] Failed to parse JSON response from ${model}: ${parseErr.message}`);
+        return this._heuristicMemoryExtractor(dialogueText);
+      }
+
+      if (!parsed || !Array.isArray(parsed.memories)) {
+        return [];
+      }
+
+      // Strictly validate each candidate memory to prevent corrupting saved memory
+      const validMemories = parsed.memories
+        .filter((m) => {
+          return (
+            m &&
+            typeof m.content === 'string' &&
+            m.content.trim().length > 0 &&
+            typeof m.category === 'string' &&
+            VALID_CATEGORIES.includes(m.category)
+          );
+        })
+        .map((m) => ({
+          category: m.category,
+          content: m.content.trim(),
+          importance: Math.min(1.0, Math.max(0.1, Number(m.importance) || 0.8)),
+        }));
+
+      return validMemories;
     } catch (err) {
+      console.warn(`[MemoryService] Gemini memory extraction warning: ${err.message}`);
       // Graceful fallback: heuristic rule-based extractor if API/creds not reachable in local dev
       return this._heuristicMemoryExtractor(dialogueText);
     }
@@ -448,7 +515,7 @@ ${dialogueText}
         if (!profile || !profile.name) {
           profile = await UserProfile.findByUserId(userId);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // 2. Fetch relevant long-term memories (only if memory is enabled)
       let memories = [];
@@ -488,7 +555,7 @@ ${dialogueText}
                 else if (diffDays === 1) dateStr = 'Yesterday';
                 else if (diffDays === 2) dateStr = '2 days ago';
                 else dateStr = `${diffDays} days ago`;
-              } catch (_) {}
+              } catch (_) { }
             }
             pastConversationSummaries.push(`• [${dateStr}] Discussion on "${pastConv.title || 'General'}": ${pastConv.lastMessage}`);
           }

@@ -80,7 +80,7 @@ class GeminiLiveSession {
       );
 
       this.ai = new GoogleGenAI({
-        vertexai: geminiLiveConfig.useEnterprise,
+        vertexai: geminiLiveConfig.vertexai,
         project: geminiLiveConfig.project,
         location: geminiLiveConfig.location,
       });

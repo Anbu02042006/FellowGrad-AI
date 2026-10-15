@@ -1,19 +1,17 @@
-const axios = require('axios');
 const GeminiService = require('./geminiService');
 
 /**
- * VoiceService (LEGACY PIPELINE)
+ * VoiceService (LEGACY REST PIPELINE)
  *
- * NOTE: This REST-based voice pipeline (ElevenLabs TTS, STT, Gemini text) is deprecated.
- * The active voice companion now uses Gemini Live API via GeminiLiveService
+ * NOTE: Legacy REST-based voice pipeline is maintained for backward compatibility.
+ * The active voice companion uses Google Gemini Live API via GeminiLiveService
  * and real-time bidirectional PCM streaming over WebSocket (/ws/live).
- *
- * Maintained strictly for backward compatibility with legacy REST callers.
  */
 class VoiceService {
   /**
-   * [LEGACY] Convert text to speech audio using ElevenLabs or Google Cloud TTS
-   * @deprecated Use Gemini Live native-audio streaming instead
+   * [LEGACY] Convert text to speech audio
+   * Real-time voice interaction is powered by Google Gemini Live API native audio (/ws/live).
+   * For legacy REST callers requiring an audio buffer, returns a minimal valid MPEG audio frame.
    * @param {string} text
    * @returns {Promise<Buffer>} audio/mpeg buffer
    */
@@ -22,35 +20,9 @@ class VoiceService {
       return Buffer.alloc(0);
     }
 
-    const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
-    const voiceId = process.env.ELEVENLABS_VOICE_ID || 'Nda4CxqYPMJ65wadFnhJ';
-    const modelId = process.env.ELEVENLABS_MODEL_ID || 'eleven_flash_v2_5';
-
-    if (elevenLabsKey) {
-      try {
-        const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_22050_32`;
-        const response = await axios.post(
-          url,
-          { text, model_id: modelId },
-          {
-            headers: {
-              'xi-api-key': elevenLabsKey,
-              'Content-Type': 'application/json',
-              Accept: 'audio/mpeg',
-            },
-            responseType: 'arraybuffer',
-            timeout: 30000,
-          }
-        );
-        return Buffer.from(response.data);
-      } catch (err) {
-        console.error('[VoiceService] ElevenLabs TTS error:', err.response?.data || err.message);
-      }
-    }
-
     // Fallback: minimal valid MP3 frame (silent MPEG audio frame)
     // MPEG 1 Layer III, 32 kbps, 22050 Hz, mono
-    console.warn('[VoiceService] TTS provider not configured or failed. Returning dummy audio buffer.');
+    console.log('[VoiceService] Legacy REST TTS requested; real-time voice is powered by Gemini Live API.');
     const minimalMp3 = Buffer.from([
       0xff, 0xfb, 0x90, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

@@ -79,11 +79,18 @@ Voice & Conversation Principles:
 
 const LIVE_SYSTEM_PROMPT = getSystemPromptForVoice('Aoede');
 
+const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI !== undefined
+  ? process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true'
+  : (process.env.GOOGLE_GENAI_USE_ENTERPRISE !== undefined
+      ? process.env.GOOGLE_GENAI_USE_ENTERPRISE === 'true'
+      : true);
+
 const geminiLiveConfig = {
   // Google Cloud / Vertex AI settings
   project: process.env.GOOGLE_CLOUD_PROJECT || 'fellowgrad-ai',
   location: process.env.GOOGLE_CLOUD_LOCATION || 'global',
-  useEnterprise: process.env.GOOGLE_GENAI_USE_ENTERPRISE === 'true' || true,
+  vertexai: useVertexAI,
+  useEnterprise: useVertexAI,
 
   // Currently supported Live native-audio model for Vertex AI
   model: process.env.GEMINI_LIVE_MODEL || 'gemini-live-2.5-flash-native-audio',
