@@ -156,9 +156,25 @@
   align-items: center;
 }
 
-.secondaryButtonText {
-  color: #E2E8F0;
-  font-size: 16px;
+.googleButton {
+  width: 100%;
+  background-color: #FFFFFF;
+  height: 52px;
+  border-radius: 16px;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  elevation: 2;
+  shadow-color: #000000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.15;
+  shadow-radius: 4px;
+}
+
+.googleButtonText {
+  color: #1F2937;
+  font-size: 15px;
   font-weight: 600;
 }
 

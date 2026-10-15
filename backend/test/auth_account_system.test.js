@@ -207,6 +207,98 @@ const runAuthAccountTests = async () => {
     assert('11. Refresh token exchange succeeds', refreshRes.status === 200 && !!refreshRes.data?.token);
 
     // ==========================================
+    // 2B. GOOGLE SIGN-IN TESTS
+    // ==========================================
+    console.log('\n--- Phase 2B: Google Sign-In ---');
+
+    // Google Sign-In Success
+    const googleEmail = `google_${ts}@fellowgrad.edu`;
+    const googleRes = await request(server, 'POST', '/api/auth/google', {
+      token: `mock_google_token_${ts}`,
+      email: googleEmail,
+      name: 'Google Scholar',
+    });
+    assert('11a. Google Sign-In success returns 200 and session tokens', googleRes.status === 200 && !!googleRes.data?.token);
+    assert('11b. Google Sign-In returns safe profile', googleRes.data?.user?.email === googleEmail);
+
+    // Google Sign-In Duplicate Prevention (Same user signs in again)
+    const googleResRepeat = await request(server, 'POST', '/api/auth/google', {
+      token: `mock_google_token_${ts}`,
+      email: googleEmail,
+      name: 'Google Scholar',
+    });
+    assert('11c. Google Sign-In repeat lookup preserves same userId (no duplicates)', googleResRepeat.status === 200 && googleResRepeat.data?.user?.id === googleRes.data?.user?.id);
+
+    // Google Sign-In Missing / Invalid Token
+    const googleBadRes = await request(server, 'POST', '/api/auth/google', {});
+    assert('11d. Google Sign-In rejected when token missing', googleBadRes.status === 400 || googleBadRes.status === 401);
+
+    // ==========================================
+    // 2C. FORGOT PASSWORD & RESET TESTS
+    // ==========================================
+    console.log('\n--- Phase 2C: Forgot Password & Single-Use Reset Code ---');
+
+    const resetTestEmail = `reset_${ts}@fellowgrad.edu`;
+    await request(server, 'POST', '/api/auth/register', {
+      fullName: 'Reset User',
+      email: resetTestEmail,
+      password: validPassword,
+      confirmPassword: validPassword,
+    });
+
+    // Forgot password request
+    const forgotRes = await request(server, 'POST', '/api/auth/forgot-password', {
+      email: resetTestEmail,
+    });
+    assert('11e. Forgot Password request returns generic confirmation (no user enumeration)', forgotRes.status === 200 && forgotRes.data?.success === true);
+    const resetCode = forgotRes.data?.resetToken;
+
+    // Invalid reset code rejected
+    const badResetRes = await request(server, 'POST', '/api/auth/reset-password', {
+      email: resetTestEmail,
+      token: '000000',
+      newPassword: 'BrandNewPassword789!',
+      confirmPassword: 'BrandNewPassword789!',
+    });
+    assert('11f. Invalid reset code is rejected with 400', badResetRes.status === 400);
+
+    // Password mismatch on reset rejected
+    const mismatchResetRes = await request(server, 'POST', '/api/auth/reset-password', {
+      email: resetTestEmail,
+      token: resetCode || '123456',
+      newPassword: 'BrandNewPassword789!',
+      confirmPassword: 'DifferentPassword123!',
+    });
+    assert('11g. Password mismatch during reset is rejected with 400', mismatchResetRes.status === 400);
+
+    // Successful password reset with valid code
+    if (resetCode) {
+      const successResetRes = await request(server, 'POST', '/api/auth/reset-password', {
+        email: resetTestEmail,
+        token: resetCode,
+        newPassword: 'BrandNewPassword789!',
+        confirmPassword: 'BrandNewPassword789!',
+      });
+      assert('11h. Successful password reset returns 200', successResetRes.status === 200 && successResetRes.data?.success === true);
+
+      // Verify code is single-use: second attempt must fail
+      const reuseResetRes = await request(server, 'POST', '/api/auth/reset-password', {
+        email: resetTestEmail,
+        token: resetCode,
+        newPassword: 'AnotherPassword999!',
+        confirmPassword: 'AnotherPassword999!',
+      });
+      assert('11i. Single-use token enforcement: reused code is rejected', reuseResetRes.status === 400);
+
+      // Verify user can log in with new password
+      const loginAfterReset = await request(server, 'POST', '/api/auth/login', {
+        email: resetTestEmail,
+        password: 'BrandNewPassword789!',
+      });
+      assert('11j. User successfully logs in with new password', loginAfterReset.status === 200 && !!loginAfterReset.data?.token);
+    }
+
+    // ==========================================
     // 3. AUTH / ME TESTS
     // ==========================================
     console.log('\n--- Phase 3: Identity & /me Endpoints ---');

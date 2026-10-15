@@ -94,11 +94,8 @@ const forgotPassword = async (req, res, next) => {
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
-    // Production architecture for email reset instructions
-    return res.status(200).json({
-      success: true,
-      message: 'If an account exists with that email, password reset instructions have been dispatched.',
-    });
+    const result = await AuthService.forgotPassword(email);
+    return res.status(200).json(result);
   } catch (err) {
     next(err);
   }
@@ -106,14 +103,23 @@ const forgotPassword = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
   try {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword) {
-      return res.status(400).json({ error: 'Token and new password are required' });
-    }
-    return res.status(200).json({
-      success: true,
-      message: 'Password has been reset successfully. Please sign in.',
+    const { email, token, newPassword, confirmPassword } = req.body;
+    const result = await AuthService.resetPassword({
+      email,
+      token,
+      newPassword,
+      confirmPassword,
     });
+    return res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const googleSignIn = async (req, res, next) => {
+  try {
+    const result = await AuthService.googleSignIn(req.body);
+    return res.status(200).json(result);
   } catch (err) {
     next(err);
   }
@@ -132,6 +138,7 @@ const validateToken = async (req, res, next) => {
 module.exports = {
   register,
   login,
+  googleSignIn,
   logout,
   refresh,
   getMe,

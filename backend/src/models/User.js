@@ -160,7 +160,7 @@ class User {
   /**
    * Create a new user atomically
    */
-  static async create({ fullName, name, email, password, passwordHash, preferences = {}, academicProfile = {} }) {
+  static async create({ fullName, name, email, password, passwordHash, profileImageUrl = null, preferences = {}, academicProfile = {} }) {
     const normalizedEmail = this._normalizeEmail(email);
     const resolvedName = (fullName || name || '').trim();
     const resolvedPassword = passwordHash || password;
@@ -172,6 +172,7 @@ class User {
       name: resolvedName,
       email: normalizedEmail,
       password: resolvedPassword,
+      profileImageUrl,
       createdAt: now,
       updatedAt: now,
       lastLoginAt: now,

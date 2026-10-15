@@ -7,6 +7,7 @@ const { authRateLimiter, passwordRateLimiter } = require('../middleware/rateLimi
 // Public authentication routes with brute-force protection
 router.post('/register', authRateLimiter, authController.register);
 router.post('/login', authRateLimiter, authController.login);
+router.post('/google', authRateLimiter, authController.googleSignIn);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
 router.get('/validate', authController.validateToken);

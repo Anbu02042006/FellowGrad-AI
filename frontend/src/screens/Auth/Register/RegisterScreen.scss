@@ -167,6 +167,47 @@
   letter-spacing: 0.3px;
 }
 
+.dividerRow {
+  flex-direction: row;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  gap: 12px;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dividerText {
+  color: #717D96;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.googleButton {
+  background-color: #FFFFFF;
+  height: 52px;
+  border-radius: 14px;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  elevation: 2;
+  shadow-color: #000000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.15;
+  shadow-radius: 4px;
+}
+
+.googleButtonText {
+  color: #1F2937;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .footerRow {
   flex-direction: row;
   justify-content: center;

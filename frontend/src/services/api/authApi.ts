@@ -85,7 +85,13 @@ const authApi = {
     apiClient.delete<{ success: boolean; message: string }>('/api/auth/account', { data: { password } }),
 
   forgotPassword: (email: string) =>
-    apiClient.post<{ success: boolean; message: string }>('/api/auth/forgot-password', { email }),
+    apiClient.post<{ success: boolean; message: string; resetToken?: string }>('/api/auth/forgot-password', { email }),
+
+  resetPassword: (data: { email: string; token: string; newPassword: string; confirmPassword?: string }) =>
+    apiClient.post<{ success: boolean; message: string }>('/api/auth/reset-password', data),
+
+  googleLogin: (data: { idToken?: string; token?: string; email?: string; name?: string; profileImageUrl?: string; googleId?: string }) =>
+    apiClient.post<AuthResponse>('/api/auth/google', data),
 
   validate: (token: string) =>
     apiClient.get<boolean>(`/api/auth/validate?token=${token}`),

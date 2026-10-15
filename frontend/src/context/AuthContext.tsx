@@ -18,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
+  signInWithGoogle: (data: { idToken?: string; token?: string; email?: string; name?: string; profileImageUrl?: string; googleId?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
@@ -151,6 +152,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async (data: {
+    idToken?: string;
+    token?: string;
+    email?: string;
+    name?: string;
+    profileImageUrl?: string;
+    googleId?: string;
+  }) => {
+    try {
+      console.log('[AUTH] Initiating Google Sign-In with backend...');
+      const response = await authApi.googleLogin(data);
+      const authData = response.data;
+      const userObj = authData.user || authData;
+
+      await AsyncStorage.setItem('accessToken', authData.token);
+      if (authData.refreshToken) {
+        await AsyncStorage.setItem('refreshToken', authData.refreshToken);
+      }
+      await AsyncStorage.setItem('userData', JSON.stringify(userObj));
+
+      console.log('[AUTH] Google Sign-In successful for:', userObj.email);
+      setUser(userObj);
+    } catch (e) {
+      console.error('[AUTH] Google Sign-In error:', e);
+      throw e;
+    }
+  };
+
   const logout = async () => {
     console.log('[AUTH] Logging out user...');
     try {
@@ -238,6 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         login,
         register,
+        signInWithGoogle,
         logout,
         refreshUser,
         updateProfile,

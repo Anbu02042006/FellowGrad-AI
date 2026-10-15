@@ -11,6 +11,7 @@ const inMemoryStore = {
   userProfiles: new Map(),
   conversations: new Map(),
   messages: new Map(),
+  passwordResets: new Map(),
 };
 
 /**
