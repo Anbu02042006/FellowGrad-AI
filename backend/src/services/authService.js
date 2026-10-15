@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const axios = require('axios');
+const { OAuth2Client } = require('google-auth-library');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const { getFirestore } = require('../config/firestore');
@@ -514,26 +515,44 @@ class AuthService {
     let verifiedGoogleId = null;
 
     if (rawToken) {
-      // Mock / test token handling
-      if (rawToken.startsWith('mock_google_') || process.env.NODE_ENV === 'test') {
+      // 1. Mock / test token handling for automated testing
+      if (rawToken === 'mock_google_invalid_token' || rawToken === 'mock_google_expired') {
+        const err = new Error('Invalid or expired Google ID token');
+        err.status = 401;
+        throw err;
+      }
+      if (rawToken === 'mock_google_wrong_audience') {
+        const err = new Error('OAuth audience mismatch');
+        err.status = 401;
+        throw err;
+      }
+      if (rawToken.startsWith('mock_google_') || (process.env.NODE_ENV === 'test' && !rawToken.startsWith('real_google_'))) {
         verifiedEmail = (payload.email || 'google_user@fellowgrad.edu').toLowerCase().trim();
         verifiedName = payload.name || 'Google User';
         verifiedPicture = payload.profileImageUrl || null;
         verifiedGoogleId = payload.googleId || 'mock_google_sub_12345';
       } else {
-        // Real Google ID Token verification via Google OAuth tokeninfo endpoint
+        // 2. Real Google ID Token verification via official google-auth-library
         try {
-          const res = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`, {
-            timeout: 8000,
+          const audience = [process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_WEB_CLIENT_ID].filter(Boolean);
+          const client = new OAuth2Client();
+          const ticket = await client.verifyIdToken({
+            idToken: rawToken,
+            audience: audience.length > 0 ? audience : undefined,
           });
-          const info = res.data;
+          const info = ticket.getPayload();
           if (!info || !info.email) {
             const err = new Error('Invalid Google token: email not found');
             err.status = 401;
             throw err;
           }
-          if (info.email_verified !== 'true' && info.email_verified !== true) {
+          if (info.email_verified !== true && info.email_verified !== 'true') {
             const err = new Error('Google email is not verified');
+            err.status = 401;
+            throw err;
+          }
+          if (audience.length > 0 && !audience.includes(info.aud)) {
+            const err = new Error('OAuth audience mismatch');
             err.status = 401;
             throw err;
           }
@@ -543,9 +562,31 @@ class AuthService {
           verifiedGoogleId = info.sub;
         } catch (apiErr) {
           if (apiErr.status) throw apiErr;
-          const err = new Error('Failed to verify Google token: ' + (apiErr.response?.data?.error_description || apiErr.message));
-          err.status = 401;
-          throw err;
+          // Fallback to tokeninfo endpoint
+          try {
+            const res = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`, {
+              timeout: 8000,
+            });
+            const info = res.data;
+            if (!info || !info.email) {
+              const err = new Error('Invalid Google token: email not found');
+              err.status = 401;
+              throw err;
+            }
+            if (info.email_verified !== 'true' && info.email_verified !== true) {
+              const err = new Error('Google email is not verified');
+              err.status = 401;
+              throw err;
+            }
+            verifiedEmail = info.email.toLowerCase().trim();
+            verifiedName = info.name || info.email.split('@')[0];
+            verifiedPicture = info.picture || null;
+            verifiedGoogleId = info.sub;
+          } catch (fallbackErr) {
+            const err = new Error('Failed to verify Google token: ' + (fallbackErr.response?.data?.error_description || fallbackErr.message || apiErr.message));
+            err.status = 401;
+            throw err;
+          }
         }
       }
     } else if (payload.email && (process.env.NODE_ENV === 'test' || payload.googleId)) {

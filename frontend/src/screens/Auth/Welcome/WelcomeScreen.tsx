@@ -11,6 +11,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import styles from './WelcomeScreen.scss';
 import { useAuth } from '../../../context/AuthContext';
+import { signInWithGooglePlayServices } from '../../../services/auth/googleAuthService';
 
 interface WelcomeScreenProps {
   navigation: any;
@@ -24,61 +25,23 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
     setIsGoogleLoading(true);
 
     try {
-      Alert.prompt
-        ? Alert.prompt(
-            'Google Sign-In',
-            'Enter your verified Google email address:',
-            async (inputEmail) => {
-              if (inputEmail && inputEmail.trim()) {
-                try {
-                  const googleEmail = inputEmail.trim().toLowerCase();
-                  await signInWithGoogle({
-                    token: `mock_google_${Date.now()}`,
-                    email: googleEmail,
-                    name: googleEmail.split('@')[0],
-                  });
-                } catch (gErr: any) {
-                  Alert.alert('Google Sign-In Error', gErr.message || 'Could not complete sign in.');
-                } finally {
-                  setIsGoogleLoading(false);
-                }
-              } else {
-                setIsGoogleLoading(false);
-              }
-            },
-            'plain-text',
-            'student@gmail.com'
-          )
-        : Alert.alert(
-            'Google Sign-In',
-            'Connect your Google Account to sign in seamlessly with FellowGrad.',
-            [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => setIsGoogleLoading(false),
-              },
-              {
-                text: 'Continue with Google',
-                onPress: async () => {
-                  try {
-                    const googleEmail = 'student@gmail.com';
-                    await signInWithGoogle({
-                      token: `mock_google_${Date.now()}`,
-                      email: googleEmail,
-                      name: googleEmail.split('@')[0],
-                    });
-                  } catch (gErr: any) {
-                    Alert.alert('Google Sign-In Error', gErr.message || 'Could not complete sign in.');
-                  } finally {
-                    setIsGoogleLoading(false);
-                  }
-                },
-              },
-            ]
-          );
+      const result = await signInWithGooglePlayServices();
+      if (result.cancelled) {
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      await signInWithGoogle({
+        idToken: result.idToken,
+        token: result.idToken,
+        email: result.user?.email,
+        name: result.user?.name || undefined,
+        profileImageUrl: result.user?.photo || undefined,
+        googleId: result.user?.id,
+      });
     } catch (e: any) {
       Alert.alert('Google Sign-In Error', e.message || 'Google Sign-In failed');
+    } finally {
       setIsGoogleLoading(false);
     }
   };

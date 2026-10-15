@@ -11,6 +11,7 @@ import authApi, {
 import userApi, { UserProfile } from '../services/api/userApi';
 import audioInputService from '../services/audioInputService';
 import audioOutputService from '../services/audioOutputService';
+import { configureGoogleSignIn, signOutGoogle } from '../services/auth/googleAuthService';
 
 interface AuthContextType {
   user: SafeUser | AuthResponse | null;
@@ -42,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    configureGoogleSignIn();
     // Check for stored session on application launch
     const loadStoredAuth = async () => {
       console.log('[AUTH] App starting');
@@ -187,7 +189,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await audioInputService.stopCapture().catch(() => {});
       await audioOutputService.stop().catch(() => {});
 
-      // 2. Notify backend to invalidate session
+      // 2. Terminate device Google session if applicable
+      await signOutGoogle().catch(() => {});
+
+      // 3. Notify backend to invalidate session
       await authApi.logout().catch(() => {});
 
       // 3. Clear local storage tokens & cached state

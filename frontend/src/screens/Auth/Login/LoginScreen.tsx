@@ -15,6 +15,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import styles from './LoginScreen.scss';
 import { useAuth } from '../../../context/AuthContext';
+import { signInWithGooglePlayServices } from '../../../services/auth/googleAuthService';
 
 interface LoginScreenProps {
   navigation: any;
@@ -79,64 +80,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
     setIsGoogleLoading(true);
 
     try {
-      // In production mobile environment, if native Google Play Services is configured,
-      // it delivers the Google ID token. If in development/testing without Play Services,
-      // provides structured prompt or verified credentials.
-      Alert.prompt
-        ? Alert.prompt(
-            'Google Sign-In',
-            'Enter your verified Google email address:',
-            async (inputEmail) => {
-              if (inputEmail && inputEmail.trim()) {
-                try {
-                  const googleEmail = inputEmail.trim().toLowerCase();
-                  await signInWithGoogle({
-                    token: `mock_google_${Date.now()}`,
-                    email: googleEmail,
-                    name: googleEmail.split('@')[0],
-                  });
-                } catch (gErr: any) {
-                  setErrorMessage(gErr.message || 'Google Sign-In could not be completed.');
-                } finally {
-                  setIsGoogleLoading(false);
-                }
-              } else {
-                setIsGoogleLoading(false);
-              }
-            },
-            'plain-text',
-            email || 'student@gmail.com'
-          )
-        : Alert.alert(
-            'Google Sign-In',
-            'Connect your Google Account to sign in seamlessly with FellowGrad.',
-            [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => setIsGoogleLoading(false),
-              },
-              {
-                text: 'Continue with Google',
-                onPress: async () => {
-                  try {
-                    const googleEmail = (email || 'student@gmail.com').trim().toLowerCase();
-                    await signInWithGoogle({
-                      token: `mock_google_${Date.now()}`,
-                      email: googleEmail,
-                      name: googleEmail.split('@')[0],
-                    });
-                  } catch (gErr: any) {
-                    setErrorMessage(gErr.message || 'Google Sign-In could not be completed.');
-                  } finally {
-                    setIsGoogleLoading(false);
-                  }
-                },
-              },
-            ]
-          );
+      const result = await signInWithGooglePlayServices();
+      if (result.cancelled) {
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      await signInWithGoogle({
+        idToken: result.idToken,
+        token: result.idToken,
+        email: result.user?.email,
+        name: result.user?.name || undefined,
+        profileImageUrl: result.user?.photo || undefined,
+        googleId: result.user?.id,
+      });
     } catch (e: any) {
-      setErrorMessage(e.message || 'Google Sign-In failed');
+      setErrorMessage(e.message || 'Google Sign-In could not be completed.');
+    } finally {
       setIsGoogleLoading(false);
     }
   };

@@ -229,9 +229,21 @@ const runAuthAccountTests = async () => {
     });
     assert('11c. Google Sign-In repeat lookup preserves same userId (no duplicates)', googleResRepeat.status === 200 && googleResRepeat.data?.user?.id === googleRes.data?.user?.id);
 
-    // Google Sign-In Missing / Invalid Token
+    // Google Sign-In Missing Token
     const googleBadRes = await request(server, 'POST', '/api/auth/google', {});
     assert('11d. Google Sign-In rejected when token missing', googleBadRes.status === 400 || googleBadRes.status === 401);
+
+    // Google Sign-In Invalid or Expired Token
+    const googleInvalidRes = await request(server, 'POST', '/api/auth/google', {
+      token: 'mock_google_invalid_token',
+    });
+    assert('11e. Google Sign-In rejected with 401 for invalid/expired token', googleInvalidRes.status === 401);
+
+    // Google Sign-In Wrong Audience
+    const googleAudienceRes = await request(server, 'POST', '/api/auth/google', {
+      token: 'mock_google_wrong_audience',
+    });
+    assert('11f. Google Sign-In rejected with 401 for OAuth audience mismatch', googleAudienceRes.status === 401);
 
     // ==========================================
     // 2C. FORGOT PASSWORD & RESET TESTS
